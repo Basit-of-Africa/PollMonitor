@@ -30,6 +30,8 @@ require_once POLLMONITOR_PLUGIN_DIR . 'includes/class-pollmonitor-validator.php'
 
 // Initialize the plugin
 function pollmonitor_init() {
+    // Load plugin textdomain for translations
+    load_plugin_textdomain( 'pollmonitor', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
 	$cpt = new PollMonitor_CPT();
 	$cpt->init();
 

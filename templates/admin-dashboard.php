@@ -62,10 +62,13 @@
                 }
                 if ( $recent_incidents ) {
                     foreach ( $recent_incidents as $post ) {
+                        $edit_link = esc_url( get_edit_post_link( $post->ID ) );
+                        $date = esc_html( get_the_date( '', $post ) );
+                        $time = esc_html( get_the_time( '', $post ) );
                         echo '<tr>';
-                        echo '<td><strong><a href="' . get_edit_post_link( $post->ID ) . '">' . esc_html( $post->post_title ) . '</a></strong></td>';
-                        echo '<td>' . get_the_date( '', $post ) . ' ' . get_the_time( '', $post ) . '</td>';
-                        echo '<td><span class="status-' . esc_attr($post->post_status) . '">' . esc_html( $post->post_status ) . '</span></td>';
+                        echo '<td><strong><a href="' . $edit_link . '">' . esc_html( $post->post_title ) . '</a></strong></td>';
+                        echo '<td>' . $date . ' ' . $time . '</td>';
+                        echo '<td><span class="status-' . esc_attr( $post->post_status ) . '">' . esc_html( $post->post_status ) . '</span></td>';
                         echo '</tr>';
                     }
                 } else {

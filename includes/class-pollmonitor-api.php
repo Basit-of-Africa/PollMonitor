@@ -149,23 +149,54 @@ class PollMonitor_API {
         global $wpdb;
         $params = $request->get_json_params();
 
+        // Permission check
+        if ( ! current_user_can( 'pollmonitor_submit' ) ) {
+            return new WP_Error( 'forbidden', 'You do not have permission to submit results', array( 'status' => 403 ) );
+        }
+
         // Basic validation
         if ( empty( $params['station_id'] ) ) {
             return new WP_Error( 'missing_data', 'Missing station ID', array( 'status' => 400 ) );
         }
 
+        $station_id = intval( $params['station_id'] );
+        $station = get_post( $station_id );
+        if ( ! $station || 'poll_station' !== $station->post_type ) {
+            return new WP_Error( 'invalid_station', 'Station ID is invalid', array( 'status' => 400 ) );
+        }
+
+        // Coerce numeric values and validate ranges
+        $party_a = isset( $params['party_a'] ) ? intval( $params['party_a'] ) : 0;
+        $party_b = isset( $params['party_b'] ) ? intval( $params['party_b'] ) : 0;
+        $party_c = isset( $params['party_c'] ) ? intval( $params['party_c'] ) : 0;
+        $party_d = isset( $params['party_d'] ) ? intval( $params['party_d'] ) : 0;
+        $total_valid = isset( $params['total_valid'] ) ? intval( $params['total_valid'] ) : 0;
+        $total_invalid = isset( $params['total_invalid'] ) ? intval( $params['total_invalid'] ) : 0;
+
+        $values = array( $party_a, $party_b, $party_c, $party_d, $total_valid, $total_invalid );
+        foreach ( $values as $v ) {
+            if ( $v < 0 ) {
+                return new WP_Error( 'invalid_value', 'Vote counts must be non-negative integers', array( 'status' => 400 ) );
+            }
+        }
+
+        $sum_parties = $party_a + $party_b + $party_c + $party_d;
+        if ( $total_valid < $sum_parties ) {
+            return new WP_Error( 'invalid_totals', 'Total valid votes cannot be less than sum of party votes', array( 'status' => 400 ) );
+        }
+
         $table = $wpdb->prefix . 'pollmonitor_results';
-        
+
         $inserted = $wpdb->insert(
             $table,
             array(
-                'station_id'    => intval( $params['station_id'] ),
-                'party_a'       => isset( $params['party_a'] ) ? intval( $params['party_a'] ) : 0,
-                'party_b'       => isset( $params['party_b'] ) ? intval( $params['party_b'] ) : 0,
-                'party_c'       => isset( $params['party_c'] ) ? intval( $params['party_c'] ) : 0,
-                'party_d'       => isset( $params['party_d'] ) ? intval( $params['party_d'] ) : 0,
-                'total_valid'   => isset( $params['total_valid'] ) ? intval( $params['total_valid'] ) : 0,
-                'total_invalid' => isset( $params['total_invalid'] ) ? intval( $params['total_invalid'] ) : 0,
+                'station_id'    => $station_id,
+                'party_a'       => $party_a,
+                'party_b'       => $party_b,
+                'party_c'       => $party_c,
+                'party_d'       => $party_d,
+                'total_valid'   => $total_valid,
+                'total_invalid' => $total_invalid,
                 'created_by'    => get_current_user_id(),
                 'status'        => 'pending' // Requires Validator approval
             ),
