@@ -1,0 +1,56 @@
+.pollmonitor-incident-form-container .pm-map,
+.pollmonitor-incident-list-container .pm-map,
+#pollmonitor-frontend-map,
+#pm-incidents-map {
+	height: 360px;
+	width: 100%;
+	border-radius: 0.5rem;
+	overflow: hidden;
+}
+
+#pm-preview img,
+.pm-incident-thumb {
+	max-width: 100%;
+	height: auto;
+	border-radius: 0.375rem;
+}
+
+.pm-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	background-color: #2563eb; /* blue-600 */
+	color: #ffffff;
+	padding: 0.5rem 1rem;
+	border-radius: 0.375rem;
+}
+.pm-btn:hover { background-color: #1d4ed8; }
+
+.pm-btn-small {
+	display:inline-flex;
+	align-items:center;
+	justify-content:center;
+	background-color:#e5e7eb;
+	color:#1f2937;
+	padding:0.25rem 0.5rem;
+	border-radius:0.25rem;
+}
+
+/* Simple modal tweaks */
+.pm-modal {
+	background: rgba(0,0,0,0.6);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 1rem;
+}
+.pm-modal-inner {
+	max-width: 800px;
+	width: 100%;
+	background: #ffffff;
+	padding: 1rem;
+	border-radius: 0.5rem;
+}
+
+/* Accessibility helpers */
+.pm-loading-spinner { display:inline-block; }

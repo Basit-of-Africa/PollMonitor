@@ -52,7 +52,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function loadPage(p) {
         page = p || 1;
-        listEl.innerHTML = '<div class="pm-loading-spinner" aria-hidden="true"></div> Loading...';
+        // show skeleton placeholders while loading
+        listEl.innerHTML = '';
+        for (let i=0;i<Math.min(perPage,4);i++){
+            const sk = document.createElement('div');
+            sk.className = 'pm-skeleton-card';
+            listEl.appendChild(sk);
+        }
 
         // Ensure stations are loaded first
         loadStations().then(() => {
@@ -89,7 +95,7 @@ document.addEventListener('DOMContentLoaded', function() {
         listEl.innerHTML = '';
         items.forEach(item => {
             const card = document.createElement('article');
-            card.className = 'pm-incident-card';
+            card.className = 'pm-incident-card pm-animate';
 
             // Thumbnail if available via _embedded
             let thumbUrl = null;
@@ -133,6 +139,11 @@ document.addEventListener('DOMContentLoaded', function() {
             card.appendChild(actions);
 
             listEl.appendChild(card);
+            // trigger enter animation
+            requestAnimationFrame(() => {
+                card.classList.add('pm-enter');
+                setTimeout(()=>{ card.classList.remove('pm-animate'); card.classList.remove('pm-enter'); }, 320);
+            });
         });
     }
 

@@ -35,6 +35,11 @@ class PollMonitor_Frontend {
             wp_enqueue_style( 'leaflet-css', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css', array(), '1.9.4' );
             wp_enqueue_script( 'leaflet-js', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js', array(), '1.9.4', true );
 
+            // Tailwind via CDN for modern UI (fast iteration)
+            wp_enqueue_script( 'tailwind-cdn', 'https://cdn.tailwindcss.com', array(), null, false );
+            // Small overrides to complement Tailwind utilities
+            wp_enqueue_style( 'pollmonitor-tailwind-overrides', POLLMONITOR_PLUGIN_URL . 'assets/css/tailwind-overrides.css', array(), POLLMONITOR_VERSION );
+
             // Enqueue our frontend JS and depend on leaflet
             wp_enqueue_script( 'pollmonitor-frontend-js', POLLMONITOR_PLUGIN_URL . 'assets/js/frontend.js', array( 'jquery', 'leaflet-js' ), POLLMONITOR_VERSION, true );
 

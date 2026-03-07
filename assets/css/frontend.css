@@ -27,11 +27,21 @@
 .pm-btn { background: #0073aa; color: #fff; padding: 10px 16px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; }
 .pm-btn[disabled] { opacity: 0.6; cursor: not-allowed; }
 .pm-loading { display: none; color: #374151; }
+.pm-btn .pm-spinner { display: inline-block; width: 16px; height: 16px; border:2px solid rgba(255,255,255,0.3); border-top-color: #ffffff; border-radius:50%; animation: spin 1s linear infinite; margin-left:8px; vertical-align:middle; }
+.pm-fade { transition: opacity 240ms ease, transform 240ms ease; }
+.pm-hidden { opacity: 0; transform: translateY(6px); pointer-events: none; }
+.pm-visible { opacity: 1; transform: translateY(0); }
+
+.pm-message { padding: 10px 12px; border-radius: 6px; margin-bottom: 10px; transition: opacity 220ms ease; }
 .pm-message { padding: 10px 12px; border-radius: 6px; margin-bottom: 10px; }
 .pm-message.success { background: #ecfdf5; color: #065f46; border: 1px solid #bbf7d0; }
 .pm-message.error { background: #fff1f2; color: #9f1239; border: 1px solid #fecdd3; }
 .pm-preview { margin-top: 10px; }
 .pm-preview img { max-width: 240px; max-height: 160px; border-radius: 4px; display: block; border: 1px solid #e5e7eb; }
+
+/* Simple skeleton for form loading */
+.pm-skeleton { background: linear-gradient(90deg, #f3f4f6 25%, #e9eef6 37%, #f3f4f6 63%); background-size: 400% 100%; animation: shimmer 1.2s linear infinite; border-radius:6px; }
+@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 
 @media (max-width: 640px) {
 	.pollmonitor-incident-form-container { padding: 12px; }
@@ -41,5 +51,7 @@
 
 /* Map container */
 .pm-map { height: 280px; width: 100%; margin-top: 8px; border-radius: 6px; border: 1px solid #e5e7eb; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
 
 

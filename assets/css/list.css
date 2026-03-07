@@ -2,6 +2,8 @@
 .pollmonitor-incident-list-container { max-width: 900px; margin: 22px auto; padding: 18px; background: #fff; border: 1px solid #e6e6e6; border-radius: 8px; }
 .pm-incident-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
 .pm-incident-card { border: 1px solid #e5e7eb; padding: 12px; border-radius: 8px; background: #fafafa; display: flex; flex-direction: column; }
+.pm-incident-card.pm-animate { transform: translateY(6px); opacity: 0; transition: transform 260ms ease, opacity 260ms ease; }
+.pm-incident-card.pm-animate.pm-enter { transform: translateY(0); opacity: 1; }
 .pm-incident-card h3 { margin: 0 0 8px 0; font-size: 1rem; }
 .pm-incident-thumb { width:100%; height:120px; object-fit:cover; border-radius:6px; margin-bottom:8px; }
 .pm-incident-card .pm-meta { color: #6b7280; font-size: 0.9rem; margin-bottom: 8px; }
@@ -26,3 +28,7 @@
 
 .pm-loading-spinner { display:inline-block; width:18px; height:18px; border:2px solid rgba(0,0,0,0.08); border-top-color:#0073aa; border-radius:50%; animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* Skeleton card while loading */
+.pm-skeleton-card { height: 160px; border-radius:8px; background: linear-gradient(90deg, #f3f4f6 25%, #e9eef6 37%, #f3f4f6 63%); background-size: 400% 100%; animation: shimmer 1.2s linear infinite; }
+@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }

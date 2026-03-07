@@ -99,6 +99,17 @@ class PollMonitor_API {
 		// Handle multipart/form-data parameters
 		$params = $request->get_params();
 
+        // Verify REST nonce for logged-in requests
+        $nonce = $request->get_header( 'X-WP-Nonce' );
+        if ( ! $nonce || ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
+            return new WP_Error( 'bad_nonce', 'Invalid or missing REST nonce', array( 'status' => 403 ) );
+        }
+
+        // Rate limiting: max 10 incident submissions per hour per user/ip
+        if ( $this->rate_limit_exceeded( $request, 'incident_create', 10, HOUR_IN_SECONDS ) ) {
+            return new WP_Error( 'rate_limited', 'Submission rate limit exceeded. Try again later.', array( 'status' => 429 ) );
+        }
+
         if ( empty( $params['title'] ) || empty( $params['content'] ) || empty( $params['station_id'] ) ) {
             return new WP_Error( 'missing_data', 'Missing required fields (title, content, station_id)', array( 'status' => 400 ) );
         }
@@ -170,9 +181,20 @@ class PollMonitor_API {
         global $wpdb;
         $params = $request->get_json_params();
 
+        // Verify REST nonce for logged-in requests
+        $nonce = $request->get_header( 'X-WP-Nonce' );
+        if ( ! $nonce || ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
+            return new WP_Error( 'bad_nonce', 'Invalid or missing REST nonce', array( 'status' => 403 ) );
+        }
+
         // Permission check
         if ( ! current_user_can( 'pollmonitor_submit' ) ) {
             return new WP_Error( 'forbidden', 'You do not have permission to submit results', array( 'status' => 403 ) );
+        }
+
+        // Rate limiting: max 20 result submissions per hour per user/ip
+        if ( $this->rate_limit_exceeded( $request, 'result_create', 20, HOUR_IN_SECONDS ) ) {
+            return new WP_Error( 'rate_limited', 'Submission rate limit exceeded. Try again later.', array( 'status' => 429 ) );
         }
 
         // Basic validation
@@ -236,6 +258,52 @@ class PollMonitor_API {
         }
 
         return new WP_REST_Response( array( 'message' => 'Results submitted successfully', 'id' => $result_id ), 201 );
+    }
+
+    /**
+     * Simple rate limit tracker using options (per user or IP).
+     * Returns true if limit exceeded, false otherwise.
+     */
+    protected function rate_limit_exceeded( WP_REST_Request $request, $action = 'generic', $limit = 10, $period = HOUR_IN_SECONDS ) {
+        $user_id = get_current_user_id();
+
+        if ( $user_id && $user_id > 0 ) {
+            $ident = 'user_' . intval( $user_id );
+        } else {
+            $ip = isset( $_SERVER['REMOTE_ADDR'] ) ? $_SERVER['REMOTE_ADDR'] : '0.0.0.0';
+            $ident = 'ip_' . preg_replace( '/[^0-9a-fA-F:\.]/', '', $ip );
+        }
+
+        $name = 'pollmonitor_rl_' . md5( $action . '_' . $ident );
+
+        $record = get_option( $name );
+        $now = time();
+
+        if ( false === $record || ! is_array( $record ) ) {
+            $record = array( 'count' => 1, 'expires' => $now + $period );
+            add_option( $name, $record, '', 'no' );
+            return false;
+        }
+
+        // Reset window if expired
+        if ( isset( $record['expires'] ) && $now > intval( $record['expires'] ) ) {
+            $record = array( 'count' => 1, 'expires' => $now + $period );
+            update_option( $name, $record );
+            return false;
+        }
+
+        // Increment and check
+        $record['count'] = isset( $record['count'] ) ? intval( $record['count'] ) + 1 : 1;
+        update_option( $name, $record );
+
+        if ( $record['count'] > intval( $limit ) ) {
+            if ( class_exists( 'PollMonitor_DB' ) ) {
+                PollMonitor_DB::log_action( 'rate_limit_exceeded', get_current_user_id(), 0, sprintf( 'Action:%s ident:%s count:%d limit:%d', $action, $ident, $record['count'], $limit ) );
+            }
+            return true;
+        }
+
+        return false;
     }
 
 

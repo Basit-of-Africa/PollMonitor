@@ -3,6 +3,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const messageBox = document.getElementById('pollmonitor-form-message');
     const submitBtn = document.getElementById('pm-submit-btn');
     const loadingSpan = document.getElementById('pm-loading');
+    // inject spinner inside submit button for better visual
+    if ( submitBtn && ! submitBtn.querySelector('.pm-spinner') ) {
+        const spinner = document.createElement('span');
+        spinner.className = 'pm-spinner';
+        spinner.style.display = 'none';
+        submitBtn.appendChild(spinner);
+    }
     const fileInput = document.getElementById('pm-evidence');
     const previewContainer = document.getElementById('pm-preview');
     if (!form) return;
@@ -155,8 +162,10 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        // Show loading state
+        // Show loading state (button spinner + loading label)
         submitBtn.disabled = true;
+        const btnSpinner = submitBtn.querySelector('.pm-spinner');
+        if ( btnSpinner ) btnSpinner.style.display = 'inline-block';
         loadingSpan.style.display = 'inline';
         messageBox.style.display = 'none';
 
@@ -186,6 +195,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 showMessage('Incident reported successfully! ID: ' + (body.id || ''), 'success');
                 form.reset();
                 if ( previewContainer ) previewContainer.innerHTML = '';
+                // subtle success animation
+                form.classList.add('pm-fade');
+                setTimeout(() => form.classList.remove('pm-fade'), 800);
             } else {
                 const msg = (body && body.message) ? body.message : 'There was an error submitting your report. Please try again.';
                 showMessage(msg, 'error');
@@ -198,6 +210,8 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .finally(() => {
             submitBtn.disabled = false;
+            const btnSpinner = submitBtn.querySelector('.pm-spinner');
+            if ( btnSpinner ) btnSpinner.style.display = 'none';
             loadingSpan.style.display = 'none';
         });
     });
