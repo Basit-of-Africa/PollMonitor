@@ -29,6 +29,27 @@ class PollMonitor_API {
 			'callback'            => array( $this, 'create_result' ),
 			'permission_callback' => array( $this, 'permissions_check_submit' ), 
 		) );
+
+        // Locations and stations by location
+        register_rest_route( $namespace, '/locations', array(
+            'methods'             => WP_REST_Server::READABLE,
+            'callback'            => array( $this, 'get_locations' ),
+            'permission_callback' => array( $this, 'permissions_check_read' ),
+            'args' => array(
+                'type' => array( 'required' => false, 'default' => 'state' ), // state|lga|ward
+                'parent' => array( 'required' => false ),
+            ),
+        ) );
+
+        register_rest_route( $namespace, '/stations-by-location', array(
+            'methods'             => WP_REST_Server::READABLE,
+            'callback'            => array( $this, 'get_stations_by_location' ),
+            'permission_callback' => array( $this, 'permissions_check_read' ),
+            'args' => array(
+                'taxonomy' => array( 'required' => true ), // state|lga|ward
+                'term_id'  => array( 'required' => true ),
+            ),
+        ) );
 	}
 
     public function permissions_check_read() {
@@ -215,5 +236,86 @@ class PollMonitor_API {
         }
 
         return new WP_REST_Response( array( 'message' => 'Results submitted successfully', 'id' => $result_id ), 201 );
+    }
+
+
+    /**
+     * Get hierarchical locations (states, lgas, wards)
+     * Params: type (state|lga|ward), parent (term id)
+     */
+    public function get_locations( WP_REST_Request $request ) {
+        $type = $request->get_param( 'type' );
+        $parent = $request->get_param( 'parent' );
+
+        $allowed = array( 'state', 'lga', 'ward' );
+        if ( ! in_array( $type, $allowed, true ) ) {
+            return new WP_Error( 'invalid_type', 'Invalid location type', array( 'status' => 400 ) );
+        }
+
+        $args = array( 'hide_empty' => false );
+        if ( ! empty( $parent ) ) {
+            $args['parent'] = intval( $parent );
+        }
+
+        $terms = get_terms( array_merge( array( 'taxonomy' => $type ), $args ) );
+
+        if ( is_wp_error( $terms ) ) {
+            return $terms;
+        }
+
+        $data = array();
+        foreach ( $terms as $t ) {
+            $data[] = array(
+                'id' => $t->term_id,
+                'name' => $t->name,
+                'slug' => $t->slug,
+                'parent' => $t->parent,
+            );
+        }
+
+        return new WP_REST_Response( $data, 200 );
+    }
+
+    /**
+     * Get poll stations by taxonomy term (state|lga|ward)
+     * Params: taxonomy, term_id
+     */
+    public function get_stations_by_location( WP_REST_Request $request ) {
+        $taxonomy = $request->get_param( 'taxonomy' );
+        $term_id = intval( $request->get_param( 'term_id' ) );
+
+        $allowed = array( 'state', 'lga', 'ward' );
+        if ( ! in_array( $taxonomy, $allowed, true ) ) {
+            return new WP_Error( 'invalid_taxonomy', 'Invalid taxonomy', array( 'status' => 400 ) );
+        }
+
+        // Query stations with term
+        $args = array(
+            'post_type' => 'poll_station',
+            'posts_per_page' => 100,
+            'tax_query' => array(
+                array(
+                    'taxonomy' => $taxonomy,
+                    'field' => 'term_id',
+                    'terms' => $term_id,
+                ),
+            ),
+        );
+
+        $posts = get_posts( $args );
+
+        $data = array();
+        foreach ( $posts as $p ) {
+            $lat = get_post_meta( $p->ID, 'pollmonitor_lat', true );
+            $lng = get_post_meta( $p->ID, 'pollmonitor_lng', true );
+            $data[] = array(
+                'id' => $p->ID,
+                'title' => $p->post_title,
+                'lat' => $lat ? (float) $lat : null,
+                'lng' => $lng ? (float) $lng : null,
+            );
+        }
+
+        return new WP_REST_Response( $data, 200 );
     }
 }

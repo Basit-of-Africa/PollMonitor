@@ -6,9 +6,16 @@
 class PollMonitor_Frontend {
 
 	public function init() {
-		add_shortcode( 'pollmonitor_incident_form', array( $this, 'render_incident_form' ) );
+        add_shortcode( 'pollmonitor_incident_form', array( $this, 'render_incident_form' ) );
+        add_shortcode( 'pollmonitor_incident_list', array( $this, 'render_incident_list' ) );
         add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_frontend_assets' ) );
 	}
+
+    public function render_incident_list() {
+        ob_start();
+        require POLLMONITOR_PLUGIN_DIR . 'templates/incidents-list.php';
+        return ob_get_clean();
+    }
 
 	public function render_incident_form() {
 		// Output buffering to capture the template inclusion
@@ -21,7 +28,7 @@ class PollMonitor_Frontend {
         global $post;
 
         // Only load script if our shortcode is on the page
-        if ( is_a( $post, 'WP_Post' ) && has_shortcode( $post->post_content, 'pollmonitor_incident_form' ) ) {
+        if ( is_a( $post, 'WP_Post' ) && ( has_shortcode( $post->post_content, 'pollmonitor_incident_form' ) || has_shortcode( $post->post_content, 'pollmonitor_incident_list' ) ) ) {
             wp_enqueue_style( 'pollmonitor-frontend-css', POLLMONITOR_PLUGIN_URL . 'assets/css/frontend.css', array(), POLLMONITOR_VERSION );
 
             // Leaflet for interactive maps on the frontend
@@ -30,6 +37,12 @@ class PollMonitor_Frontend {
 
             // Enqueue our frontend JS and depend on leaflet
             wp_enqueue_script( 'pollmonitor-frontend-js', POLLMONITOR_PLUGIN_URL . 'assets/js/frontend.js', array( 'jquery', 'leaflet-js' ), POLLMONITOR_VERSION, true );
+
+            // Incidents list assets (only if list shortcode present)
+            if ( has_shortcode( $post->post_content, 'pollmonitor_incident_list' ) ) {
+                wp_enqueue_style( 'pollmonitor-list-css', POLLMONITOR_PLUGIN_URL . 'assets/css/list.css', array(), POLLMONITOR_VERSION );
+                wp_enqueue_script( 'pollmonitor-list-js', POLLMONITOR_PLUGIN_URL . 'assets/js/list.js', array( 'jquery' ), POLLMONITOR_VERSION, true );
+            }
             
             // Pass API URL to frontend script
             wp_localize_script( 'pollmonitor-frontend-js', 'pollmonitorApiSettings', array(

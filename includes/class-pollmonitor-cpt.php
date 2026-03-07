@@ -55,6 +55,16 @@ class PollMonitor_CPT {
 			'show_in_rest'          => true, // Expose to API
 		);
 		register_post_type( 'incident_report', $args_incident );
+
+		// Expose station id post meta to REST API for frontend mapping
+		if ( function_exists( 'register_post_meta' ) ) {
+			register_post_meta( 'incident_report', 'pollmonitor_station_id', array(
+				'show_in_rest' => true,
+				'single' => true,
+				'type' => 'integer',
+				'description' => 'Associated PollMonitor station ID',
+			) );
+		}
 	}
 
 	public function register_taxonomies() {
@@ -93,6 +103,20 @@ class PollMonitor_CPT {
 			'labels'            => array( 'name' => 'Severities', 'singular_name' => 'Severity' ),
 			'show_ui'           => true,
 			'show_in_rest'      => true,
+		) );
+
+		// Issue categories manageable by site administrators
+		register_taxonomy( 'issue_category', array( 'incident_report' ), array(
+			'hierarchical'      => true,
+			'labels'            => array( 'name' => 'Issue Categories', 'singular_name' => 'Issue Category' ),
+			'show_ui'           => true,
+			'show_in_rest'      => true,
+			'capabilities'      => array(
+				'manage_terms' => 'manage_options',
+				'edit_terms'   => 'manage_options',
+				'delete_terms' => 'manage_options',
+				'assign_terms' => 'pollmonitor_submit',
+			),
 		) );
 	}
 }
