@@ -23,7 +23,13 @@ class PollMonitor_Frontend {
         // Only load script if our shortcode is on the page
         if ( is_a( $post, 'WP_Post' ) && has_shortcode( $post->post_content, 'pollmonitor_incident_form' ) ) {
             wp_enqueue_style( 'pollmonitor-frontend-css', POLLMONITOR_PLUGIN_URL . 'assets/css/frontend.css', array(), POLLMONITOR_VERSION );
-            wp_enqueue_script( 'pollmonitor-frontend-js', POLLMONITOR_PLUGIN_URL . 'assets/js/frontend.js', array(), POLLMONITOR_VERSION, true );
+
+            // Leaflet for interactive maps on the frontend
+            wp_enqueue_style( 'leaflet-css', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css', array(), '1.9.4' );
+            wp_enqueue_script( 'leaflet-js', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js', array(), '1.9.4', true );
+
+            // Enqueue our frontend JS and depend on leaflet
+            wp_enqueue_script( 'pollmonitor-frontend-js', POLLMONITOR_PLUGIN_URL . 'assets/js/frontend.js', array( 'jquery', 'leaflet-js' ), POLLMONITOR_VERSION, true );
             
             // Pass API URL to frontend script
             wp_localize_script( 'pollmonitor-frontend-js', 'pollmonitorApiSettings', array(

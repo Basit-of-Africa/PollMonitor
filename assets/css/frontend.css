@@ -1,4 +1,45 @@
-/* Minimal frontend styles for PollMonitor incident form */
-.pollmonitor-incident-form-container h2 { margin-top: 0; }
-.pollmonitor-incident-form-container input, .pollmonitor-incident-form-container textarea, .pollmonitor-incident-form-container select { box-sizing: border-box; }
-#pollmonitor-form-message { transition: all 0.15s ease-in-out; }
+/* Frontend styles for PollMonitor incident form */
+.pollmonitor-incident-form-container {
+	max-width: 680px;
+	margin: 18px auto;
+	padding: 20px;
+	background: #ffffff;
+	border: 1px solid #e5e7eb;
+	border-radius: 8px;
+	box-shadow: 0 1px 3px rgba(16,24,40,0.04);
+	font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+}
+.pollmonitor-incident-form-container h2 { margin-top: 0; font-size: 1.25rem; }
+.pm-row { margin-bottom: 14px; }
+.pm-row label { display: block; margin-bottom: 6px; font-weight: 600; color: #111827; }
+.pm-row input[type="text"], .pm-row textarea, .pm-row select, .pm-row input[type="file"] {
+	width: 100%;
+	padding: 10px 12px;
+	border: 1px solid #d1d5db;
+	border-radius: 6px;
+	background: #fff;
+	font-size: 0.95rem;
+	color: #111827;
+}
+.pm-row textarea { min-height: 110px; resize: vertical; }
+.pm-hint { display: block; margin-top: 6px; color: #6b7280; font-size: 0.9rem; }
+.pm-actions { display: flex; align-items: center; gap: 12px; }
+.pm-btn { background: #0073aa; color: #fff; padding: 10px 16px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; }
+.pm-btn[disabled] { opacity: 0.6; cursor: not-allowed; }
+.pm-loading { display: none; color: #374151; }
+.pm-message { padding: 10px 12px; border-radius: 6px; margin-bottom: 10px; }
+.pm-message.success { background: #ecfdf5; color: #065f46; border: 1px solid #bbf7d0; }
+.pm-message.error { background: #fff1f2; color: #9f1239; border: 1px solid #fecdd3; }
+.pm-preview { margin-top: 10px; }
+.pm-preview img { max-width: 240px; max-height: 160px; border-radius: 4px; display: block; border: 1px solid #e5e7eb; }
+
+@media (max-width: 640px) {
+	.pollmonitor-incident-form-container { padding: 12px; }
+	.pm-btn { width: 100%; }
+	.pm-actions { flex-direction: column; align-items: stretch; }
+}
+
+/* Map container */
+.pm-map { height: 280px; width: 100%; margin-top: 8px; border-radius: 6px; border: 1px solid #e5e7eb; }
+
+
