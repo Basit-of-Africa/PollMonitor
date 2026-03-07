@@ -1,0 +1,5 @@
+/* Minimal admin styles for PollMonitor */
+.pollmonitor-dashboard .stat-card h3 { font-size: 0.95em; margin-bottom: 8px; }
+.pollmonitor-dashboard .stat-card h2 { font-weight: 600; }
+.pollmonitor-recent table td .status-pending { color: #d63638; font-weight: 600; }
+.pollmonitor-recent table td .status-publish { color: #2ea2cc; font-weight: 600; }

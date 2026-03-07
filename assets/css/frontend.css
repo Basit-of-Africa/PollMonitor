@@ -1,0 +1,4 @@
+/* Minimal frontend styles for PollMonitor incident form */
+.pollmonitor-incident-form-container h2 { margin-top: 0; }
+.pollmonitor-incident-form-container input, .pollmonitor-incident-form-container textarea, .pollmonitor-incident-form-container select { box-sizing: border-box; }
+#pollmonitor-form-message { transition: all 0.15s ease-in-out; }
