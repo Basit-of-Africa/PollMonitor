@@ -3,13 +3,15 @@
  * Plugin Name: PollMonitor
  * Description: An election monitoring system for real-time data collection and result aggregation.
  * Version:     1.0.0
- * Author:      Antigravity
+ * Author:      AbdulBasit Ajibade (Basit of Africa)
+ * Author URI:  https://github.com/Basit-of-Africa
+ * Plugin URI:  https://github.com/Basit-of-Africa/PollMonitor
  * License:     GPL-2.0+
  */
 
 // If this file is called directly, abort.
 if ( ! defined( 'WPINC' ) ) {
-	die;
+    die;
 }
 
 // Define plugin constants
