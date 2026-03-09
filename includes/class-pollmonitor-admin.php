@@ -19,11 +19,25 @@ class PollMonitor_Admin {
 			'pollmonitor-dashboard',
 			array( $this, 'render_dashboard_page' )
 		);
+
+		add_submenu_page(
+			'edit.php?post_type=poll_station',
+			__( 'Self Test', 'pollmonitor' ),
+			__( 'Self Test', 'pollmonitor' ),
+			'manage_options',
+			'pollmonitor-self-test',
+			array( $this, 'render_self_test_page' )
+		);
 	}
 
 	public function render_dashboard_page() {
 		// Include the template file for the dashboard
 		require_once POLLMONITOR_PLUGIN_DIR . 'templates/admin-dashboard.php';
+	}
+
+	public function render_self_test_page() {
+		// Include the template for self-tests
+		require_once POLLMONITOR_PLUGIN_DIR . 'templates/admin-self-test.php';
 	}
 
 	public function enqueue_admin_assets( $hook_suffix ) {
