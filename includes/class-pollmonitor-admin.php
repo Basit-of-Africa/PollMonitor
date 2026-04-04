@@ -68,6 +68,9 @@ class PollMonitor_Admin {
                 $import_error = 'Please choose a CSV file exported from Excel.';
             } else {
                 $file = $_FILES['pollmonitor_observer_csv'];
+                if ( ! empty( $file['error'] ) ) {
+                    $import_error = 'The file upload failed. Please try again.';
+                } else {
                 $file_name = isset( $file['name'] ) ? sanitize_file_name( wp_unslash( $file['name'] ) ) : '';
                 $extension = strtolower( pathinfo( $file_name, PATHINFO_EXTENSION ) );
 
@@ -79,6 +82,7 @@ class PollMonitor_Admin {
                         $import_error = $import_result->get_error_message();
                         $import_result = null;
                     }
+                }
                 }
             }
         }

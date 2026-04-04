@@ -91,6 +91,10 @@ class PollMonitor_Observer_Importer {
                 $password = wp_generate_password( 12, true, true );
             }
 
+            if ( empty( $name_parts['display_name'] ) ) {
+                $name_parts['display_name'] = $username;
+            }
+
             $user_id = wp_insert_user(
                 array(
                     'user_login'   => $username,
@@ -113,6 +117,16 @@ class PollMonitor_Observer_Importer {
         } else {
             $user_id = $user->ID;
 
+            if ( empty( $name_parts['display_name'] ) ) {
+                $name_parts['display_name'] = $user->display_name;
+            }
+            if ( empty( $name_parts['first_name'] ) ) {
+                $name_parts['first_name'] = get_user_meta( $user_id, 'first_name', true );
+            }
+            if ( empty( $name_parts['last_name'] ) ) {
+                $name_parts['last_name'] = get_user_meta( $user_id, 'last_name', true );
+            }
+
             $update_data = array(
                 'ID'           => $user_id,
                 'user_email'   => $email,
@@ -120,10 +134,6 @@ class PollMonitor_Observer_Importer {
                 'first_name'   => $name_parts['first_name'],
                 'last_name'    => $name_parts['last_name'],
             );
-
-            if ( ! empty( $username ) && $username !== $user->user_login && ! username_exists( $username ) ) {
-                $update_data['user_login'] = $username;
-            }
 
             $updated = wp_update_user( $update_data );
             if ( is_wp_error( $updated ) ) {
