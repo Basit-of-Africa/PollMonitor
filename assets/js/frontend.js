@@ -3,6 +3,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const messageBox = document.getElementById('pollmonitor-form-message');
     const submitBtn = document.getElementById('pm-submit-btn');
     const loadingSpan = document.getElementById('pm-loading');
+    const stationSelect = document.getElementById('pm-station');
+    const stateSelect = document.getElementById('pm-state');
+    const lgaSelect = document.getElementById('pm-lga');
+    const wardSelect = document.getElementById('pm-ward');
+    const locationFilters = document.getElementById('pm-location-filters');
+    const assignmentMessage = document.getElementById('pm-assignment-message');
+    const stationAccess = pollmonitorApiSettings.stationAccess || {};
     // inject spinner inside submit button for better visual
     if ( submitBtn && ! submitBtn.querySelector('.pm-spinner') ) {
         const spinner = document.createElement('span');
@@ -17,41 +24,39 @@ document.addEventListener('DOMContentLoaded', function() {
     // Load Stations on Init
     loadStations();
     bindFilePreview();
+    bindLocationFilters();
 
     function loadStations() {
-        const stationSelect = document.getElementById('pm-station');
         // Keep submit disabled until stations load
         if ( submitBtn ) submitBtn.disabled = true;
-        fetch(pollmonitorApiSettings.root + 'pollmonitor/v1/stations')
-            .then(response => response.json())
-            .then(data => {
-                stationSelect.innerHTML = '<option value="">-- Select a Station --</option>';
-                if(data && data.length) {
-                    // Populate select and map markers
-                    const markers = [];
-                    data.forEach(station => {
-                        const option = document.createElement('option');
-                        option.value = station.id;
-                        option.textContent = station.title;
-                        stationSelect.appendChild(option);
+        resetStationSelect('Loading stations...');
 
-                        if ( station.lat && station.lng ) {
-                            markers.push({ id: station.id, title: station.title, lat: station.lat, lng: station.lng });
-                        }
-                    });
+        if ( stationAccess.has_assignments ) {
+            if ( assignmentMessage ) {
+                assignmentMessage.style.display = 'block';
+                assignmentMessage.textContent = 'Your account is restricted to assigned polling units.';
+            }
+            fetchStations('pollmonitor/v1/stations?assigned_only=1');
+            return;
+        }
 
-                    if ( submitBtn ) submitBtn.disabled = false;
+        if ( stationAccess.requires_assignment ) {
+            if ( assignmentMessage ) {
+                assignmentMessage.style.display = 'block';
+                assignmentMessage.textContent = 'No polling units have been assigned to your account yet. Contact an administrator.';
+            }
+            resetStationSelect('No assigned polling units available');
+            return;
+        }
 
-                    // Initialize frontend map if available
-                    if ( typeof L !== 'undefined' && markers.length > 0 ) {
-                        initFrontendMap( markers );
-                    }
-                }
-            })
-            .catch(error => {
-                console.error('Error loading stations:', error);
-                stationSelect.innerHTML = '<option value="">Error loading stations</option>';
-            });
+        if ( locationFilters ) {
+            locationFilters.style.display = 'block';
+        }
+        if ( assignmentMessage ) {
+            assignmentMessage.style.display = 'block';
+            assignmentMessage.textContent = 'Select a state, LGA, and ward to load polling units.';
+        }
+        loadLocationOptions('state', null, stateSelect, 'Select state');
     }
 
     // Initialize Leaflet map on the frontend and add markers
@@ -71,8 +76,18 @@ document.addEventListener('DOMContentLoaded', function() {
         const map = window.pollmonitorFrontendMap;
         const group = [];
 
+        if ( window.pollmonitorFrontendMarkers ) {
+            window.pollmonitorFrontendMarkers.clearLayers();
+        } else {
+            window.pollmonitorFrontendMarkers = L.layerGroup().addTo(map);
+        }
+
         markers.forEach(s => {
-            const marker = L.marker([s.lat, s.lng]).addTo(map);
+            if ( s.lat === null || s.lng === null ) {
+                return;
+            }
+
+            const marker = L.marker([s.lat, s.lng]).addTo(window.pollmonitorFrontendMarkers);
             marker.bindPopup('<strong>' + escapeHtml(s.title) + '</strong><br>ID: ' + s.id + '<br><button data-station="' + s.id + '" class="pm-select-station">Select</button>');
             group.push([s.lat, s.lng]);
         });
@@ -99,6 +114,140 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             }
         });
+    }
+
+    function bindLocationFilters() {
+        if ( ! stateSelect || ! lgaSelect || ! wardSelect ) return;
+
+        stateSelect.addEventListener('change', function() {
+            resetSelect(lgaSelect, 'Select LGA');
+            resetSelect(wardSelect, 'Select ward');
+            resetStationSelect('Select a ward to load polling units');
+
+            if ( ! this.value ) {
+                lgaSelect.disabled = true;
+                wardSelect.disabled = true;
+                return;
+            }
+
+            loadLocationOptions('lga', this.value, lgaSelect, 'Select LGA');
+        });
+
+        lgaSelect.addEventListener('change', function() {
+            resetSelect(wardSelect, 'Select ward');
+            resetStationSelect('Select a ward to load polling units');
+
+            if ( ! this.value ) {
+                wardSelect.disabled = true;
+                return;
+            }
+
+            loadLocationOptions('ward', this.value, wardSelect, 'Select ward');
+        });
+
+        wardSelect.addEventListener('change', function() {
+            if ( ! this.value ) {
+                resetStationSelect('Select a ward to load polling units');
+                return;
+            }
+
+            fetchStations('pollmonitor/v1/stations-by-location?taxonomy=ward&term_id=' + encodeURIComponent(this.value));
+        });
+    }
+
+    function loadLocationOptions(type, parentId, selectEl, placeholder) {
+        if ( ! selectEl ) return;
+
+        selectEl.disabled = true;
+        resetSelect(selectEl, 'Loading...');
+
+        let url = 'pollmonitor/v1/locations?type=' + encodeURIComponent(type);
+        if ( parentId ) {
+            url += '&parent=' + encodeURIComponent(parentId);
+        }
+
+        fetchJson(url)
+            .then(data => {
+                resetSelect(selectEl, placeholder);
+                if ( Array.isArray(data) ) {
+                    data.forEach(item => {
+                        const option = document.createElement('option');
+                        option.value = item.id;
+                        option.textContent = item.name;
+                        selectEl.appendChild(option);
+                    });
+                }
+                selectEl.disabled = false;
+            })
+            .catch(error => {
+                console.error('Error loading locations:', error);
+                resetSelect(selectEl, 'Error loading options');
+                selectEl.disabled = false;
+            });
+    }
+
+    function fetchStations(path) {
+        fetchJson(path)
+            .then(data => {
+                populateStations(Array.isArray(data) ? data : []);
+            })
+            .catch(error => {
+                console.error('Error loading stations:', error);
+                resetStationSelect('Error loading stations');
+            });
+    }
+
+    function fetchJson(path) {
+        return fetch(pollmonitorApiSettings.root + path, {
+            headers: {
+                'X-WP-Nonce': pollmonitorApiSettings.nonce
+            }
+        }).then(response => {
+            if ( ! response.ok ) {
+                return response.json().catch(() => ({})).then(body => {
+                    const message = body && body.message ? body.message : 'Request failed';
+                    throw new Error(message);
+                });
+            }
+            return response.json();
+        });
+    }
+
+    function populateStations(data) {
+        resetStationSelect('-- Select a Station --');
+        const markers = [];
+
+        if ( data.length === 0 ) {
+            resetStationSelect('No polling units found');
+            return;
+        }
+
+        data.forEach(station => {
+            const option = document.createElement('option');
+            option.value = station.id;
+            option.textContent = station.title;
+            stationSelect.appendChild(option);
+
+            if ( station.lat !== null && station.lng !== null ) {
+                markers.push({ id: station.id, title: station.title, lat: station.lat, lng: station.lng });
+            }
+        });
+
+        if ( submitBtn ) submitBtn.disabled = false;
+
+        if ( typeof L !== 'undefined' ) {
+            initFrontendMap( markers );
+        }
+    }
+
+    function resetSelect(selectEl, placeholder) {
+        if ( ! selectEl ) return;
+        selectEl.innerHTML = '<option value="">' + placeholder + '</option>';
+    }
+
+    function resetStationSelect(placeholder) {
+        resetSelect(stationSelect, placeholder);
+        if ( submitBtn ) submitBtn.disabled = true;
     }
 
     function escapeHtml(unsafe) {

@@ -50,9 +50,11 @@ class PollMonitor_Frontend {
             }
             
             // Pass API URL to frontend script
+            $station_access = PollMonitor_API::get_station_access_context( get_current_user_id() );
             wp_localize_script( 'pollmonitor-frontend-js', 'pollmonitorApiSettings', array(
-                'root'  => esc_url_raw( rest_url() ),
-                'nonce' => wp_create_nonce( 'wp_rest' )
+                'root'          => esc_url_raw( rest_url() ),
+                'nonce'         => wp_create_nonce( 'wp_rest' ),
+                'stationAccess' => $station_access,
             ) );
         }
     }

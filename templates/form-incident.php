@@ -15,6 +15,34 @@
         </div>
 
         <div class="pm-row">
+            <div id="pm-assignment-message" class="pm-hint text-sm text-gray-500 mb-2" style="display:none;"></div>
+        </div>
+
+        <div class="pm-row" id="pm-location-filters" style="display:none;">
+            <label class="block text-sm font-medium text-gray-700">Find Polling Station by Location</label>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
+                <div>
+                    <label for="pm-state" class="block text-sm font-medium text-gray-700">State</label>
+                    <select id="pm-state" name="pm-state" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                        <option value="">Select state</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="pm-lga" class="block text-sm font-medium text-gray-700">LGA</label>
+                    <select id="pm-lga" name="pm-lga" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" disabled>
+                        <option value="">Select LGA</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="pm-ward" class="block text-sm font-medium text-gray-700">Ward</label>
+                    <select id="pm-ward" name="pm-ward" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" disabled>
+                        <option value="">Select ward</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="pm-row">
             <label for="pm-station" class="block text-sm font-medium text-gray-700">Select Polling Station *</label>
             <select id="pm-station" name="pm-station" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
                 <option value="">Loading stations...</option>

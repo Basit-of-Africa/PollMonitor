@@ -10,6 +10,14 @@ class PollMonitor_DB {
 		self::create_tables();
 	}
 
+    public static function register_hooks() {
+        add_action( 'save_post_poll_station', array( __CLASS__, 'clear_dashboard_cache' ) );
+        add_action( 'save_post_incident_report', array( __CLASS__, 'clear_dashboard_cache' ) );
+        add_action( 'trashed_post', array( __CLASS__, 'maybe_clear_dashboard_cache_for_post' ) );
+        add_action( 'untrashed_post', array( __CLASS__, 'maybe_clear_dashboard_cache_for_post' ) );
+        add_action( 'deleted_post', array( __CLASS__, 'maybe_clear_dashboard_cache_for_post' ) );
+    }
+
 	private static function create_tables() {
 		global $wpdb;
 		$charset_collate = $wpdb->get_charset_collate();
@@ -71,5 +79,22 @@ class PollMonitor_DB {
             ),
             array( '%s', '%d', '%d', '%s' )
         );
+    }
+
+    public static function clear_dashboard_cache() {
+        delete_transient( 'pollmonitor_total_stations' );
+        delete_transient( 'pollmonitor_total_incidents' );
+        delete_transient( 'pollmonitor_recent_incidents' );
+    }
+
+    public static function maybe_clear_dashboard_cache_for_post( $post_id ) {
+        $post = get_post( $post_id );
+        if ( ! $post ) {
+            return;
+        }
+
+        if ( in_array( $post->post_type, array( 'poll_station', 'incident_report' ), true ) ) {
+            self::clear_dashboard_cache();
+        }
     }
 }

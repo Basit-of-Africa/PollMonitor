@@ -25,6 +25,7 @@ require_once POLLMONITOR_PLUGIN_DIR . 'includes/class-pollmonitor-api.php';
 require_once POLLMONITOR_PLUGIN_DIR . 'includes/class-pollmonitor-admin.php';
 require_once POLLMONITOR_PLUGIN_DIR . 'includes/class-pollmonitor-frontend.php';
 require_once POLLMONITOR_PLUGIN_DIR . 'includes/class-pollmonitor-db.php';
+require_once POLLMONITOR_PLUGIN_DIR . 'includes/class-pollmonitor-observer-importer.php';
 require_once POLLMONITOR_PLUGIN_DIR . 'includes/class-pollmonitor-roles.php';
 require_once POLLMONITOR_PLUGIN_DIR . 'includes/class-pollmonitor-validator.php';
 
@@ -37,6 +38,8 @@ function pollmonitor_init() {
 
 	$api = new PollMonitor_API();
 	$api->init();
+
+    PollMonitor_DB::register_hooks();
 
     if ( is_admin() ) {
         $admin = new PollMonitor_Admin();
