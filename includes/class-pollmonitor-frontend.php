@@ -45,8 +45,11 @@ class PollMonitor_Frontend {
 
             // Incidents list assets (only if list shortcode present)
             if ( has_shortcode( $post->post_content, 'pollmonitor_incident_list' ) ) {
+                wp_enqueue_style( 'leaflet-markercluster-css', 'https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css', array( 'leaflet-css' ), '1.5.3' );
+                wp_enqueue_style( 'leaflet-markercluster-default-css', 'https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css', array( 'leaflet-markercluster-css' ), '1.5.3' );
+                wp_enqueue_script( 'leaflet-markercluster-js', 'https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js', array( 'leaflet-js' ), '1.5.3', true );
                 wp_enqueue_style( 'pollmonitor-list-css', POLLMONITOR_PLUGIN_URL . 'assets/css/list.css', array(), POLLMONITOR_VERSION );
-                wp_enqueue_script( 'pollmonitor-list-js', POLLMONITOR_PLUGIN_URL . 'assets/js/list.js', array( 'jquery' ), POLLMONITOR_VERSION, true );
+                wp_enqueue_script( 'pollmonitor-list-js', POLLMONITOR_PLUGIN_URL . 'assets/js/list.js', array( 'jquery', 'leaflet-js', 'leaflet-markercluster-js' ), POLLMONITOR_VERSION, true );
             }
             
             // Pass API URL to frontend script

@@ -8,6 +8,8 @@ class PollMonitor_Admin {
 	public function init() {
 		add_action( 'admin_menu', array( $this, 'add_admin_pages' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_assets' ) );
+        add_action( 'wp_ajax_pollmonitor_dashboard_stream', array( $this, 'stream_dashboard_events' ) );
+        add_action( 'wp_ajax_pollmonitor_dashboard_snapshot', array( $this, 'ajax_dashboard_snapshot' ) );
         add_action( 'show_user_profile', array( $this, 'render_observer_assignment_fields' ) );
         add_action( 'edit_user_profile', array( $this, 'render_observer_assignment_fields' ) );
         add_action( 'personal_options_update', array( $this, 'save_observer_assignment_fields' ) );
@@ -107,10 +109,108 @@ class PollMonitor_Admin {
         
         // Pass data to JS via localize
 		wp_localize_script( 'pollmonitor-admin-js', 'pollmonitorApiSettings', array(
-			'root'  => esc_url_raw( rest_url() ),
-			'nonce' => wp_create_nonce( 'wp_rest' )
+			'root'        => esc_url_raw( rest_url() ),
+			'nonce'       => wp_create_nonce( 'wp_rest' ),
+            'ajaxUrl'     => admin_url( 'admin-ajax.php' ),
+            'streamNonce' => wp_create_nonce( 'pollmonitor_dashboard_stream' ),
+            'snapshotNonce' => wp_create_nonce( 'pollmonitor_dashboard_snapshot' ),
 		) );
 	}
+
+    public function ajax_dashboard_snapshot() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( array( 'message' => 'Unauthorized' ), 403 );
+        }
+
+        check_ajax_referer( 'pollmonitor_dashboard_snapshot' );
+
+        wp_send_json_success( $this->get_dashboard_snapshot() );
+    }
+
+    public function stream_dashboard_events() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            status_header( 403 );
+            exit;
+        }
+
+        check_ajax_referer( 'pollmonitor_dashboard_stream' );
+
+        @set_time_limit( 0 );
+        @ini_set( 'output_buffering', 'off' );
+        @ini_set( 'zlib.output_compression', 0 );
+
+        nocache_headers();
+        header( 'Content-Type: text/event-stream' );
+        header( 'Cache-Control: no-cache, no-transform' );
+        header( 'X-Accel-Buffering: no' );
+
+        while ( ob_get_level() > 0 ) {
+            ob_end_flush();
+        }
+
+        $last_event_id = isset( $_SERVER['HTTP_LAST_EVENT_ID'] ) ? intval( $_SERVER['HTTP_LAST_EVENT_ID'] ) : 0;
+        if ( isset( $_GET['last_event_id'] ) ) {
+            $last_event_id = max( $last_event_id, intval( $_GET['last_event_id'] ) );
+        }
+
+        $started_at = time();
+        $max_runtime = 25;
+
+        do {
+            if ( connection_aborted() ) {
+                break;
+            }
+
+            $payload = get_option( 'pollmonitor_realtime_event_payload', array() );
+            if ( is_array( $payload ) && ! empty( $payload['id'] ) && intval( $payload['id'] ) > $last_event_id ) {
+                $last_event_id = intval( $payload['id'] );
+                echo 'id: ' . $last_event_id . "\n";
+                echo "event: dashboard-update\n";
+                echo 'data: ' . wp_json_encode( $payload ) . "\n\n";
+                flush();
+                break;
+            }
+
+            echo ": heartbeat\n\n";
+            flush();
+            sleep( 2 );
+        } while ( time() - $started_at < $max_runtime );
+
+        exit;
+    }
+
+    protected function get_dashboard_snapshot() {
+        $stations_count = wp_count_posts( 'poll_station' );
+        $incidents_count = wp_count_posts( 'incident_report' );
+
+        $recent_incidents = get_posts(
+            array(
+                'post_type'      => 'incident_report',
+                'posts_per_page' => 10,
+                'post_status'    => array( 'publish', 'pending' ),
+                'orderby'        => 'date',
+                'order'          => 'DESC',
+            )
+        );
+
+        $recent_rows = array();
+        foreach ( $recent_incidents as $incident ) {
+            $recent_rows[] = array(
+                'title'     => $incident->post_title,
+                'edit_link' => get_edit_post_link( $incident->ID ),
+                'date'      => get_the_date( '', $incident ) . ' ' . get_the_time( '', $incident ),
+                'status'    => $incident->post_status,
+            );
+        }
+
+        return array(
+            'counts' => array(
+                'stations'  => isset( $stations_count->publish ) ? (int) $stations_count->publish : 0,
+                'incidents' => ( isset( $incidents_count->pending ) ? (int) $incidents_count->pending : 0 ) + ( isset( $incidents_count->publish ) ? (int) $incidents_count->publish : 0 ),
+            ),
+            'recent_incidents' => $recent_rows,
+        );
+    }
 
     public function render_observer_assignment_fields( $user ) {
         if ( ! current_user_can( 'manage_options' ) ) {

@@ -79,6 +79,8 @@ class PollMonitor_DB {
             ),
             array( '%s', '%d', '%d', '%s' )
         );
+
+        self::maybe_publish_realtime_event( $action, $context_id, $details );
     }
 
     public static function clear_dashboard_cache() {
@@ -95,6 +97,52 @@ class PollMonitor_DB {
 
         if ( in_array( $post->post_type, array( 'poll_station', 'incident_report' ), true ) ) {
             self::clear_dashboard_cache();
+        }
+    }
+
+    public static function maybe_publish_realtime_event( $action, $context_id, $details = '' ) {
+        $realtime_actions = array(
+            'incident_created',
+            'incident_approved',
+            'incident_rejected',
+            'results_submitted',
+        );
+
+        if ( ! in_array( $action, $realtime_actions, true ) ) {
+            return;
+        }
+
+        $sequence = (int) get_option( 'pollmonitor_realtime_event_sequence', 0 ) + 1;
+        update_option( 'pollmonitor_realtime_event_sequence', $sequence, false );
+
+        $payload = array(
+            'id'         => $sequence,
+            'action'     => $action,
+            'context_id' => (int) $context_id,
+            'time'       => current_time( 'mysql', true ),
+            'message'    => self::build_realtime_message( $action, $context_id ),
+        );
+
+        if ( is_array( $details ) ) {
+            $payload['details'] = $details;
+        }
+
+        update_option( 'pollmonitor_realtime_event_payload', $payload, false );
+    }
+
+    protected static function build_realtime_message( $action, $context_id ) {
+        switch ( $action ) {
+            case 'incident_created':
+                $title = get_the_title( $context_id );
+                return $title ? sprintf( 'New incident submitted: %s', $title ) : 'New incident submitted.';
+            case 'incident_approved':
+                return 'An incident was approved.';
+            case 'incident_rejected':
+                return 'An incident was rejected.';
+            case 'results_submitted':
+                return 'New polling unit results were submitted.';
+            default:
+                return 'PollMonitor dashboard update available.';
         }
     }
 }

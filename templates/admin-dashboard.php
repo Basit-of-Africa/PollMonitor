@@ -1,6 +1,7 @@
 <div class="wrap pollmonitor-dashboard">
     <h1 class="wp-heading-inline">PollMonitor Dashboard</h1>
     <hr class="wp-header-end">
+    <div id="pollmonitor-realtime-alert" class="notice notice-info" style="display:none;" aria-live="polite"></div>
 
     <div class="pollmonitor-stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-top: 20px;">
         
@@ -15,7 +16,7 @@
                 $cached_stations = isset($stations_count->publish) ? $stations_count->publish : 0;
                 set_transient( 'pollmonitor_total_stations', $cached_stations, 300 );
             }
-            echo '<h2 style="font-size: 2em; margin: 0; color: #0073aa;">' . esc_html( $cached_stations ) . '</h2>';
+            echo '<h2 id="pollmonitor-total-stations" style="font-size: 2em; margin: 0; color: #0073aa;">' . esc_html( $cached_stations ) . '</h2>';
             ?>
         </div>
 
@@ -30,7 +31,7 @@
                 $cached_incidents = (isset($incidents_count->pending) ? $incidents_count->pending : 0) + (isset($incidents_count->publish) ? $incidents_count->publish : 0);
                 set_transient( 'pollmonitor_total_incidents', $cached_incidents, 300 );
             }
-            echo '<h2 style="font-size: 2em; margin: 0; color: #d63638;">' . esc_html( $cached_incidents ) . '</h2>';
+            echo '<h2 id="pollmonitor-total-incidents" style="font-size: 2em; margin: 0; color: #d63638;">' . esc_html( $cached_incidents ) . '</h2>';
             ?>
         </div>
     </div>
@@ -46,7 +47,7 @@
                     <th>Status</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody id="pollmonitor-recent-incidents-body">
                 <?php
                 // Cache the recent incidents query for 5 minutes
                 $recent_incidents = get_transient( 'pollmonitor_recent_incidents' );
