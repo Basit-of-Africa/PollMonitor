@@ -10,6 +10,8 @@ class PollMonitor_Frontend {
         add_shortcode( 'pollmonitor_incident_list', array( $this, 'render_incident_list' ) );
         add_shortcode( 'pollmonitor_observer_dashboard', array( $this, 'render_observer_dashboard' ) );
         add_shortcode( 'pollmonitor_onboard_form', array( $this, 'render_onboard_form' ) );
+        add_shortcode( 'pollmonitor_admin_dashboard', array( $this, 'render_admin_dashboard' ) );
+        add_shortcode( 'pollmonitor_public_dashboard', array( $this, 'render_public_dashboard' ) );
         add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_frontend_assets' ) );
 	}
 
@@ -75,7 +77,7 @@ class PollMonitor_Frontend {
             ) );
 
             // Dashboard specific assets
-            if ( has_shortcode( $post->post_content, 'pollmonitor_observer_dashboard' ) ) {
+            if ( has_shortcode( $post->post_content, 'pollmonitor_observer_dashboard' ) || has_shortcode( $post->post_content, 'pollmonitor_admin_dashboard' ) || has_shortcode( $post->post_content, 'pollmonitor_public_dashboard' ) ) {
                 wp_enqueue_style( 'pollmonitor-dashboard-css', POLLMONITOR_PLUGIN_URL . 'assets/css/dashboard.css', array(), POLLMONITOR_VERSION );
                 wp_enqueue_script( 'pollmonitor-dashboard-js', POLLMONITOR_PLUGIN_URL . 'assets/js/dashboard.js', array( 'jquery' ), POLLMONITOR_VERSION, true );
 
