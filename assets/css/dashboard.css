@@ -1,0 +1,13 @@
+/* Minimal dashboard styles */
+.pm-dashboard{font-family:Arial,Helvetica,sans-serif;padding:12px}
+.pm-dashboard h2{font-size:18px;margin-bottom:8px}
+.pm-report{border-bottom:1px solid #eee;padding:8px 0}
+.pm-report h4{margin:0 0 4px 0;font-size:14px}
+.pm-report p{margin:0 4px 6px 0;color:#444}
+.pm-meta{font-size:12px;color:#777;margin-bottom:6px}
+.pm-empty{color:#666;padding:8px}
+.pm-form{max-width:680px;background:#fafafa;padding:12px;border:1px solid #eee;margin-top:12px}
+.pm-form label{display:block;margin-bottom:6px;font-weight:600}
+.pm-form input[type="text"], .pm-form textarea, .pm-form select{width:100%;padding:8px;margin-bottom:8px;border:1px solid #ddd}
+.pm-form button{background:#1B6B3A;color:#fff;padding:8px 12px;border:0;border-radius:4px;cursor:pointer}
+.pm-status{margin-top:8px;color:#1B6B3A}

@@ -1,0 +1,4 @@
+.pm-onboard{max-width:680px;padding:12px;background:#fafafa;border:1px solid #eee}
+.pm-onboard label{display:block;margin-top:8px;font-weight:600}
+.pm-onboard input{width:100%;padding:8px;border:1px solid #ddd;margin-top:4px}
+.pm-onboard button{margin-top:10px;background:#1B6B3A;color:#fff;padding:8px 12px;border:0;border-radius:4px}

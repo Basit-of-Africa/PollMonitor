@@ -1,0 +1,800 @@
+
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --green: #1B6B3A; --green-light: #E8F5ED; --green-mid: #2E8B57;
+    --white: #fff; --cream: #F8F6F0;
+    --text: var(--color-text-primary); --muted: var(--color-text-secondary);
+    --border: var(--color-border-tertiary);
+    --card: var(--color-background-primary);
+    --surface: var(--color-background-secondary);
+    --danger: #C0392B; --warning: #E67E22; --success: #27AE60; --info: #2471A3;
+  }
+  body { font-family: 'Georgia', serif; }
+  .app { display: flex; flex-direction: column; min-height: 100vh; }
+
+  /* Header */
+  .header {
+    background: var(--green);
+    color: #fff;
+    padding: 0;
+    border-bottom: 3px solid #FFD700;
+  }
+  .header-inner {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.15);
+  }
+  .coat-arms {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: #FFD700; display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex-shrink: 0;
+  }
+  .header-title { font-size: 15px; font-weight: 500; letter-spacing: 0.3px; }
+  .header-subtitle { font-size: 11px; opacity: 0.8; margin-top: 1px; font-family: var(--font-sans); }
+  .nav {
+    display: flex; gap: 0; overflow-x: auto;
+    padding: 0 16px;
+  }
+  .nav-btn {
+    background: none; border: none; color: rgba(255,255,255,0.7);
+    padding: 8px 14px; font-size: 12px; cursor: pointer;
+    border-bottom: 2px solid transparent; white-space: nowrap;
+    font-family: var(--font-sans); transition: all 0.15s;
+  }
+  .nav-btn:hover { color: #fff; }
+  .nav-btn.active { color: #FFD700; border-bottom-color: #FFD700; }
+
+  /* Content */
+  .content { padding: 16px; display: none; }
+  .content.visible { display: block; }
+
+  /* Stat bar */
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; }
+  .stat-card {
+    background: var(--card);
+    border: 0.5px solid var(--border);
+    border-radius: var(--border-radius-lg);
+    padding: 12px 14px;
+  }
+  .stat-label { font-size: 11px; color: var(--muted); margin-bottom: 4px; font-family: var(--font-sans); text-transform: uppercase; letter-spacing: 0.5px; }
+  .stat-value { font-size: 22px; font-weight: 500; color: var(--text); }
+  .stat-sub { font-size: 11px; color: var(--muted); margin-top: 3px; font-family: var(--font-sans); }
+  .stat-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 4px; }
+
+  /* Live feed */
+  .section-title {
+    font-size: 13px; font-weight: 500; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.6px;
+    margin-bottom: 10px; font-family: var(--font-sans);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .live-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #e74c3c; animation: pulse 1.5s infinite;
+  }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+
+  .card {
+    background: var(--card);
+    border: 0.5px solid var(--border);
+    border-radius: var(--border-radius-lg);
+    padding: 14px;
+    margin-bottom: 12px;
+  }
+
+  /* Reports feed */
+  .report-item {
+    border-bottom: 0.5px solid var(--border);
+    padding: 10px 0;
+    display: flex; gap: 10px; align-items: flex-start;
+  }
+  .report-item:last-child { border-bottom: none; padding-bottom: 0; }
+  .report-badge {
+    font-size: 10px; font-weight: 500; padding: 3px 7px;
+    border-radius: 4px; flex-shrink: 0; margin-top: 2px;
+    font-family: var(--font-sans); text-transform: uppercase;
+  }
+  .badge-normal { background: #E8F5ED; color: #1B6B3A; }
+  .badge-incident { background: #FDEDEC; color: #C0392B; }
+  .badge-warning { background: #FEF9E7; color: #B7770D; }
+  .badge-info { background: #EBF5FB; color: #2471A3; }
+  .report-body { flex: 1; }
+  .report-body strong { font-size: 13px; color: var(--text); font-weight: 500; display: block; }
+  .report-body p { font-size: 12px; color: var(--muted); margin-top: 3px; font-family: var(--font-sans); line-height: 1.5; }
+  .report-meta { font-size: 11px; color: var(--muted); margin-top: 4px; font-family: var(--font-sans); }
+
+  /* Observer form */
+  .form-group { margin-bottom: 14px; }
+  .form-label { font-size: 12px; color: var(--muted); font-family: var(--font-sans); display: block; margin-bottom: 5px; font-weight: 500; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  select, input, textarea {
+    width: 100%; font-size: 13px; font-family: var(--font-sans);
+    background: var(--card); color: var(--text); border: 0.5px solid var(--color-border-secondary);
+    border-radius: var(--border-radius-md); padding: 8px 10px;
+  }
+  textarea { resize: vertical; min-height: 80px; }
+  .btn-submit {
+    background: var(--green); color: #fff; border: none;
+    padding: 10px 20px; border-radius: var(--border-radius-md);
+    font-size: 13px; font-family: var(--font-sans); cursor: pointer; width: 100%;
+    font-weight: 500; transition: opacity 0.15s;
+  }
+  .btn-submit:hover { opacity: 0.9; }
+  .btn-submit:active { opacity: 0.8; }
+
+  /* Progress bars */
+  .progress-wrap { margin-bottom: 12px; }
+  .progress-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-bottom: 5px; font-family: var(--font-sans); }
+  .progress-bar { height: 6px; background: var(--surface); border-radius: 3px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 3px; transition: width 0.5s ease; }
+
+  /* Map placeholder */
+  .map-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 4px;
+    margin-bottom: 12px;
+  }
+  .map-cell {
+    aspect-ratio: 1;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: transform 0.1s;
+    position: relative;
+  }
+  .map-cell:hover { transform: scale(1.15); }
+  .map-cell-tooltip {
+    position: absolute; bottom: 110%; left: 50%; transform: translateX(-50%);
+    background: var(--text); color: var(--card);
+    font-size: 10px; font-family: var(--font-sans);
+    padding: 4px 6px; border-radius: 4px; white-space: nowrap;
+    pointer-events: none; opacity: 0; transition: opacity 0.15s;
+    z-index: 10;
+  }
+  .map-cell:hover .map-cell-tooltip { opacity: 1; }
+
+  /* Observer table */
+  table { width: 100%; border-collapse: collapse; font-size: 12px; font-family: var(--font-sans); }
+  th { text-align: left; padding: 8px 10px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--muted); border-bottom: 0.5px solid var(--border); font-weight: 500; }
+  td { padding: 9px 10px; border-bottom: 0.5px solid var(--border); color: var(--text); }
+  tr:last-child td { border-bottom: none; }
+  .status-pill { font-size: 10px; padding: 2px 8px; border-radius: 99px; font-weight: 500; }
+  .status-active { background: #E8F5ED; color: #1B6B3A; }
+  .status-pending { background: #FEF9E7; color: #B7770D; }
+  .status-offline { background: var(--surface); color: var(--muted); }
+
+  /* Charts */
+  .chart-wrap { position: relative; height: 180px; }
+  .donut-wrap { display: flex; align-items: center; gap: 16px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); margin-bottom: 6px; font-family: var(--font-sans); }
+  .legend-swatch { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+
+  .flash-new { animation: flashNew 1s ease; }
+  @keyframes flashNew { 0% { background: #E8F5ED; } 100% { background: var(--card); } }
+
+  .tag { font-size: 10px; padding: 2px 7px; border-radius: 4px; font-family: var(--font-sans); font-weight: 500; }
+  .tag-green { background: #E8F5ED; color: #1B6B3A; }
+  .tag-red { background: #FDEDEC; color: #C0392B; }
+  .tag-amber { background: #FEF9E7; color: #B7770D; }
+</style>
+
+<h2 class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);">Nigeria Election Observation and Monitoring System — live dashboard with observer reports, incident tracking, and observer management.</h2>
+
+<div class="app">
+  <div class="header">
+    <div class="header-inner">
+      <div class="coat-arms">🦅</div>
+      <div>
+        <div class="header-title">Nigeria Election Observation & Monitoring System</div>
+        <div class="header-subtitle">Independent National Electoral Commission — Observer Network</div>
+      </div>
+      <div style="margin-left:auto; font-size:11px; font-family:var(--font-sans); opacity:0.8;" id="clock"></div>
+    </div>
+    <nav class="nav">
+      <button class="nav-btn active" onclick="showTab('dashboard')">Live Dashboard</button>
+      <button class="nav-btn" onclick="showTab('reports')">Field Reports</button>
+      <button class="nav-btn" onclick="showTab('submit')">Submit Observation</button>
+      <button class="nav-btn" onclick="showTab('observers')">Observer Registry</button>
+      <button class="nav-btn" onclick="showTab('onboard')">Onboard Observer</button>
+    </nav>
+  </div>
+
+  <!-- DASHBOARD TAB -->
+  <div class="content visible" id="tab-dashboard">
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Reports Submitted</div>
+        <div class="stat-value" id="total-reports">47</div>
+        <div class="stat-sub"><span class="stat-dot" style="background:#27AE60"></span>+3 last hour</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Active Observers</div>
+        <div class="stat-value" id="active-obs">128</div>
+        <div class="stat-sub"><span class="stat-dot" style="background:#2471A3"></span>of 156 deployed</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Incidents Flagged</div>
+        <div class="stat-value" id="incidents-count" style="color:#C0392B">9</div>
+        <div class="stat-sub"><span class="stat-dot" style="background:#E67E22"></span>3 under review</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Polling Units Covered</div>
+        <div class="stat-value">74<span style="font-size:14px; color:var(--muted)">%</span></div>
+        <div class="stat-sub"><span class="stat-dot" style="background:#8E44AD"></span>892 / 1,204 units</div>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div>
+        <div class="section-title">
+          <div class="live-dot"></div>
+          Live Reports Feed
+        </div>
+        <div class="card" id="live-feed" style="max-height:260px; overflow-y:auto; padding:10px 14px;">
+        </div>
+        <div class="section-title" style="margin-top:12px;">Coverage by State</div>
+        <div class="card">
+          <div id="state-progress"></div>
+        </div>
+      </div>
+      <div>
+        <div class="section-title">Incident Heatmap — Polling Units</div>
+        <div class="card">
+          <div class="map-grid" id="heatmap"></div>
+          <div style="display:flex; gap:16px; font-size:11px; font-family:var(--font-sans); color:var(--muted); margin-top:4px;">
+            <span><span style="display:inline-block;width:10px;height:10px;background:#E8F5ED;border-radius:2px;margin-right:4px;"></span>Normal</span>
+            <span><span style="display:inline-block;width:10px;height:10px;background:#FFD700;border-radius:2px;margin-right:4px;"></span>Caution</span>
+            <span><span style="display:inline-block;width:10px;height:10px;background:#E67E22;border-radius:2px;margin-right:4px;"></span>Incident</span>
+            <span><span style="display:inline-block;width:10px;height:10px;background:#C0392B;border-radius:2px;margin-right:4px;"></span>Critical</span>
+          </div>
+        </div>
+        <div class="section-title" style="margin-top:12px;">Report Breakdown</div>
+        <div class="card">
+          <div class="donut-wrap">
+            <div style="position:relative; width:110px; height:110px; flex-shrink:0;">
+              <canvas id="donutChart" role="img" aria-label="Donut chart showing report type breakdown">Normal: 38, Incidents: 9.</canvas>
+            </div>
+            <div id="donut-legend"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- REPORTS TAB -->
+  <div class="content" id="tab-reports">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <div class="section-title" style="margin:0;">
+        <div class="live-dot"></div>
+        All Field Reports
+      </div>
+      <div style="display:flex; gap:8px;">
+        <select id="filter-type" style="font-size:12px; padding:5px 8px;" onchange="filterReports()">
+          <option value="">All types</option>
+          <option value="normal">Normal</option>
+          <option value="incident">Incident</option>
+          <option value="warning">Warning</option>
+          <option value="info">Info</option>
+        </select>
+        <select id="filter-state" style="font-size:12px; padding:5px 8px;" onchange="filterReports()">
+          <option value="">All states</option>
+          <option>Lagos</option><option>Kano</option><option>Abuja (FCT)</option>
+          <option>Rivers</option><option>Kaduna</option><option>Oyo</option><option>Anambra</option>
+        </select>
+      </div>
+    </div>
+    <div class="card" id="all-reports-list" style="padding: 8px 14px;"></div>
+  </div>
+
+  <!-- SUBMIT TAB -->
+  <div class="content" id="tab-submit">
+    <div class="card" style="max-width:600px; margin:0 auto;">
+      <div class="section-title" style="margin-bottom:16px;">Submit Field Observation</div>
+      <div class="form-group">
+        <label class="form-label">Observer ID / Name</label>
+        <input type="text" id="obs-name" placeholder="e.g. OBS-0042 / Amina Yusuf" />
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">State</label>
+          <select id="f-state" onchange="updateLGA()">
+            <option value="">Select state</option>
+            <option>Lagos</option><option>Kano</option><option>Abuja (FCT)</option>
+            <option>Rivers</option><option>Kaduna</option><option>Oyo</option><option>Anambra</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">LGA</label>
+          <select id="f-lga" onchange="updateWard()">
+            <option value="">Select LGA</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Ward</label>
+          <select id="f-ward" onchange="updatePU()">
+            <option value="">Select ward</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Polling Unit</label>
+          <select id="f-pu">
+            <option value="">Select polling unit</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Report Type</label>
+        <select id="f-type">
+          <option value="normal">Normal — No issues</option>
+          <option value="info">Information Update</option>
+          <option value="warning">Warning — Potential Issue</option>
+          <option value="incident">Incident — Violation Observed</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Observation Details</label>
+        <textarea id="f-details" placeholder="Describe what you observed at this polling unit. Include any irregularities, voter turnout estimates, materials availability, security situation, etc."></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Voter Turnout Estimate</label>
+          <select id="f-turnout">
+            <option>Low (&lt;30%)</option>
+            <option>Moderate (30–60%)</option>
+            <option selected>High (&gt;60%)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Security Situation</label>
+          <select id="f-security">
+            <option value="peaceful" selected>Peaceful</option>
+            <option value="tense">Tense</option>
+            <option value="violent">Violent</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn-submit" onclick="submitReport()">Submit Observation Report</button>
+      <div id="submit-confirmation" style="margin-top:12px; font-size:12px; font-family:var(--font-sans); color:#27AE60; display:none; text-align:center;"></div>
+    </div>
+  </div>
+
+  <!-- OBSERVERS TAB -->
+  <div class="content" id="tab-observers">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <div class="section-title" style="margin:0;">Observer Registry</div>
+      <input type="text" placeholder="Search observers..." style="width:200px; font-size:12px; padding:5px 10px;" oninput="filterObservers(this.value)" />
+    </div>
+    <div class="card" style="padding:0; overflow:hidden;">
+      <table id="observers-table">
+        <thead>
+          <tr>
+            <th>ID</th><th>Name</th><th>State</th><th>LGA</th><th>Ward</th><th>Polling Unit</th><th>Reports</th><th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="observers-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ONBOARD TAB -->
+  <div class="content" id="tab-onboard">
+    <div class="card" style="max-width:600px; margin:0 auto;">
+      <div class="section-title" style="margin-bottom:16px;">Onboard New Observer</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">First Name</label>
+          <input type="text" id="ob-fname" placeholder="First name" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Last Name</label>
+          <input type="text" id="ob-lname" placeholder="Last name" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Phone</label>
+          <input type="text" id="ob-phone" placeholder="+234..." />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Organisation</label>
+          <input type="text" id="ob-org" placeholder="e.g. CDD-West Africa" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">State</label>
+          <select id="ob-state" onchange="updateOnboardLGA()">
+            <option value="">Select state</option>
+            <option>Lagos</option><option>Kano</option><option>Abuja (FCT)</option>
+            <option>Rivers</option><option>Kaduna</option><option>Oyo</option><option>Anambra</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">LGA</label>
+          <select id="ob-lga" onchange="updateOnboardWard()">
+            <option value="">Select LGA</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Ward</label>
+          <select id="ob-ward" onchange="updateOnboardPU()">
+            <option value="">Select ward</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Polling Unit Assignment</label>
+          <select id="ob-pu">
+            <option value="">Select polling unit</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Observer Role</label>
+        <select id="ob-role">
+          <option>Polling Unit Observer</option>
+          <option>Roving Observer</option>
+          <option>Ward Coordinator</option>
+          <option>LGA Supervisor</option>
+          <option>State Lead</option>
+        </select>
+      </div>
+      <button class="btn-submit" onclick="onboardObserver()">Register Observer</button>
+      <div id="onboard-confirmation" style="margin-top:12px; font-size:12px; font-family:var(--font-sans); color:#27AE60; display:none; text-align:center;"></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const GEO = {
+  'Lagos': {
+    'Lagos Island': { wards: ['Lagos Island Ward A','Lagos Island Ward B','Lagos Island Ward C'], pus: ['St. Gregory College PU','CMS PU','Marina PU','Onikan PU'] },
+    'Ikeja': { wards: ['Ikeja Ward I','Ikeja Ward II','Ikeja Ward III'], pus: ['GRA PU','Allen Ave PU','Alausa PU','Ojodu PU'] },
+    'Eti-Osa': { wards: ['Lekki Ward A','Lekki Ward B','Victoria Island Ward'], pus: ['Lekki PU 1','Lekki PU 2','VI Central PU','Bar Beach PU'] }
+  },
+  'Kano': {
+    'Kano Municipal': { wards: ['Gwale Ward','Dala Ward','Fagge Ward'], pus: ['Emir Palace PU','Kurmi Market PU','Kabuga PU','Bompai PU'] },
+    'Nassarawa': { wards: ['Nassarawa Ward A','Nassarawa Ward B'], pus: ['Nassarawa PU 1','Nassarawa PU 2','Tarauni PU'] },
+    'Ungogo': { wards: ['Ungogo Ward I','Ungogo Ward II'], pus: ['Ungogo Central PU','Airport PU','Zaria Road PU'] }
+  },
+  'Abuja (FCT)': {
+    'Abuja Municipal': { wards: ['Central Area Ward','Garki Ward','Wuse Ward'], pus: ['INEC HQ PU','Garki Market PU','Wuse Zone 4 PU','Area Council PU'] },
+    'Gwagwalada': { wards: ['Gwagwalada Ward I','Gwagwalada Ward II'], pus: ['Gwagwalada PU 1','Gwagwalada PU 2'] }
+  },
+  'Rivers': {
+    'Port Harcourt': { wards: ['D-Line Ward','Rumuola Ward','Elekahia Ward'], pus: ['Government House PU','Mile 1 PU','Rumuola PU 1','Rumuola PU 2'] },
+    'Obio-Akpor': { wards: ['Rumuigbo Ward','Rumuepirikom Ward'], pus: ['Rumuigbo PU','GRA Phase 2 PU','Trans-Amadi PU'] }
+  },
+  'Kaduna': {
+    'Kaduna North': { wards: ['Shaba Ward','Kabala Ward','Barnawa Ward'], pus: ['City Hall PU','Shaba Central PU','Barnawa PU 1'] },
+    'Kaduna South': { wards: ['Kakuri Ward','Makera Ward'], pus: ['Kakuri PU','Makera PU','Television PU'] }
+  },
+  'Oyo': {
+    'Ibadan North': { wards: ['Agodi Ward','Bodija Ward','Old Ife Road Ward'], pus: ['UI Gate PU','Agodi Gardens PU','Bodija Market PU'] },
+    'Ibadan South-West': { wards: ['Oke-Ado Ward','Isale-Ijebu Ward'], pus: ['Oke-Ado PU','Ring Road PU','Abebi PU'] }
+  },
+  'Anambra': {
+    'Awka South': { wards: ['Amawbia Ward','Awka Ward I','Awka Ward II'], pus: ['Anambra Gov House PU','Ifite PU','Aroma PU','Ziks Ave PU'] },
+    'Onitsha North': { wards: ['Inland Town Ward','Bridge Head Ward'], pus: ['Main Market PU','Fegge PU','Oguta Road PU'] }
+  }
+};
+
+const REPORTS = [
+  { type:'normal', state:'Lagos', lga:'Ikeja', ward:'Ikeja Ward I', pu:'GRA PU', observer:'OBS-0012 / Emeka Obi', time:'08:42', details:'Voting commenced peacefully. Materials available. Queues orderly.', turnout:'High', security:'Peaceful' },
+  { type:'incident', state:'Kano', lga:'Kano Municipal', ward:'Gwale Ward', pu:'Emir Palace PU', observer:'OBS-0031 / Halima Sule', time:'09:15', details:'Ballot box observed without tamper-evident seal. Reported to presiding officer.', turnout:'Moderate', security:'Tense' },
+  { type:'normal', state:'Abuja (FCT)', lga:'Abuja Municipal', ward:'Wuse Ward', pu:'Wuse Zone 4 PU', observer:'OBS-0007 / Chidi Nwosu', time:'09:28', details:'Materials in order. INEC staff present. Accreditation ongoing smoothly.', turnout:'Moderate', security:'Peaceful' },
+  { type:'warning', state:'Rivers', lga:'Port Harcourt', ward:'D-Line Ward', pu:'Government House PU', observer:'OBS-0055 / Blessing Tamuno', time:'09:44', details:'Large crowd gathered outside exclusion zone. Police present but outnumbered.', turnout:'High', security:'Tense' },
+  { type:'info', state:'Lagos', lga:'Eti-Osa', ward:'Lekki Ward A', pu:'Lekki PU 1', observer:'OBS-0019 / Tobi Adeyemi', time:'10:01', details:'Polling unit opened 45 minutes late due to BVAS malfunction. Now operational.', turnout:'High', security:'Peaceful' },
+  { type:'normal', state:'Kaduna', lga:'Kaduna North', ward:'Shaba Ward', pu:'City Hall PU', observer:'OBS-0044 / Fatima Garba', time:'10:12', details:'Smooth accreditation process. About 200 voters processed so far.', turnout:'Moderate', security:'Peaceful' },
+  { type:'incident', state:'Anambra', lga:'Onitsha North', ward:'Inland Town Ward', pu:'Main Market PU', observer:'OBS-0066 / Chioma Ezeh', time:'10:33', details:'Unknown individuals attempted to disrupt voting. Security forces intervened. Voting resumed.', turnout:'Low', security:'Violent' },
+  { type:'normal', state:'Oyo', lga:'Ibadan North', ward:'Bodija Ward', pu:'UI Gate PU', observer:'OBS-0022 / Seun Adeleke', time:'10:47', details:'Turnout tracking at 68%. All parties have agents. No incidents.', turnout:'High', security:'Peaceful' },
+  { type:'warning', state:'Kano', lga:'Nassarawa', ward:'Nassarawa Ward A', pu:'Nassarawa PU 1', observer:'OBS-0038 / Aisha Mohammed', time:'11:02', details:'Result sheet seen being photographed by unofficial person. Presiding officer notified.', turnout:'Moderate', security:'Tense' },
+  { type:'normal', state:'Lagos', lga:'Lagos Island', ward:'Lagos Island Ward A', pu:'St. Gregory College PU', observer:'OBS-0003 / Yewande Bello', time:'11:18', details:'Voting proceeding normally. Good turnout especially among young voters.', turnout:'High', security:'Peaceful' },
+];
+
+const OBSERVERS = [
+  { id:'OBS-0003', name:'Yewande Bello', state:'Lagos', lga:'Lagos Island', ward:'Lagos Island Ward A', pu:'St. Gregory College PU', reports:3, status:'active' },
+  { id:'OBS-0007', name:'Chidi Nwosu', state:'Abuja (FCT)', lga:'Abuja Municipal', ward:'Wuse Ward', pu:'Wuse Zone 4 PU', reports:2, status:'active' },
+  { id:'OBS-0012', name:'Emeka Obi', state:'Lagos', lga:'Ikeja', ward:'Ikeja Ward I', pu:'GRA PU', reports:4, status:'active' },
+  { id:'OBS-0019', name:'Tobi Adeyemi', state:'Lagos', lga:'Eti-Osa', ward:'Lekki Ward A', pu:'Lekki PU 1', reports:2, status:'active' },
+  { id:'OBS-0022', name:'Seun Adeleke', state:'Oyo', lga:'Ibadan North', ward:'Bodija Ward', pu:'UI Gate PU', reports:1, status:'active' },
+  { id:'OBS-0031', name:'Halima Sule', state:'Kano', lga:'Kano Municipal', ward:'Gwale Ward', pu:'Emir Palace PU', reports:3, status:'active' },
+  { id:'OBS-0038', name:'Aisha Mohammed', state:'Kano', lga:'Nassarawa', ward:'Nassarawa Ward A', pu:'Nassarawa PU 1', reports:2, status:'active' },
+  { id:'OBS-0044', name:'Fatima Garba', state:'Kaduna', lga:'Kaduna North', ward:'Shaba Ward', pu:'City Hall PU', reports:1, status:'active' },
+  { id:'OBS-0055', name:'Blessing Tamuno', state:'Rivers', lga:'Port Harcourt', ward:'D-Line Ward', pu:'Government House PU', reports:2, status:'active' },
+  { id:'OBS-0066', name:'Chioma Ezeh', state:'Anambra', lga:'Onitsha North', ward:'Inland Town Ward', pu:'Main Market PU', reports:2, status:'active' },
+  { id:'OBS-0072', name:'Ibrahim Musa', state:'Kaduna', lga:'Kaduna South', ward:'Kakuri Ward', pu:'Kakuri PU', reports:0, status:'pending' },
+  { id:'OBS-0080', name:'Ngozi Eze', state:'Anambra', lga:'Awka South', ward:'Awka Ward I', pu:'Ifite PU', reports:0, status:'offline' },
+];
+
+const stateProgress = [
+  { state:'Lagos', pct:89 }, { state:'Kano', pct:71 }, { state:'Abuja (FCT)', pct:95 },
+  { state:'Rivers', pct:68 }, { state:'Kaduna', pct:55 }, { state:'Oyo', pct:62 }, { state:'Anambra', pct:74 }
+];
+
+function typeBadge(t) {
+  const map = { normal:'badge-normal', incident:'badge-incident', warning:'badge-warning', info:'badge-info' };
+  const labels = { normal:'Normal', incident:'Incident', warning:'Warning', info:'Info' };
+  return `<span class="report-badge ${map[t]||'badge-info'}">${labels[t]||t}</span>`;
+}
+
+function renderReport(r) {
+  return `<div class="report-item">
+    ${typeBadge(r.type)}
+    <div class="report-body">
+      <strong>${r.pu} — ${r.ward}</strong>
+      <p>${r.details}</p>
+      <div class="report-meta">${r.state} › ${r.lga} &nbsp;·&nbsp; <b>${r.observer}</b> &nbsp;·&nbsp; ${r.time}</div>
+    </div>
+  </div>`;
+}
+
+function renderFeed() {
+  const feed = document.getElementById('live-feed');
+  if (feed) feed.innerHTML = REPORTS.slice(0,6).map(renderReport).join('');
+}
+
+function renderAllReports() {
+  const container = document.getElementById('all-reports-list');
+  if (!container) return;
+  const typeF = document.getElementById('filter-type')?.value || '';
+  const stateF = document.getElementById('filter-state')?.value || '';
+  const filtered = REPORTS.filter(r => (!typeF || r.type === typeF) && (!stateF || r.state === stateF));
+  container.innerHTML = filtered.length ? filtered.map(renderReport).join('') : '<p style="font-size:13px;color:var(--muted);padding:12px 0;font-family:var(--font-sans);">No reports match filters.</p>';
+}
+
+function filterReports() { renderAllReports(); }
+
+function renderStateProgress() {
+  const el = document.getElementById('state-progress');
+  if (!el) return;
+  const colors = { Lagos:'#27AE60', Kano:'#2471A3', 'Abuja (FCT)':'#8E44AD', Rivers:'#C0392B', Kaduna:'#E67E22', Oyo:'#1B6B3A', Anambra:'#2E86C1' };
+  el.innerHTML = stateProgress.map(s => `
+    <div class="progress-wrap">
+      <div class="progress-label"><span>${s.state}</span><span>${s.pct}%</span></div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${s.pct}%; background:${colors[s.state]||'#1B6B3A'};"></div></div>
+    </div>`).join('');
+}
+
+function renderHeatmap() {
+  const grid = document.getElementById('heatmap');
+  if (!grid) return;
+  const levels = [
+    {c:'#C0392B',t:'Critical: Violent disruption'},
+    {c:'#E67E22',t:'Incident: Irregularity'},
+    {c:'#27AE60',t:'Normal: Voting ongoing'},
+    {c:'#27AE60',t:'Normal: Voting ongoing'},
+    {c:'#FFD700',t:'Caution: Minor issue'},
+    {c:'#27AE60',t:'Normal: Voting ongoing'},
+    {c:'#27AE60',t:'Normal: Voting ongoing'},
+    {c:'#FFD700',t:'Caution: Overcrowding'},
+    {c:'#E67E22',t:'Incident: Ballot issue'},
+    {c:'#27AE60',t:'Normal: Voting ongoing'},
+    {c:'#27AE60',t:'Normal: Voting ongoing'},
+    {c:'#27AE60',t:'Normal: Voting ongoing'},
+    {c:'#FFD700',t:'Caution: Delay'},
+    {c:'#27AE60',t:'Normal: Voting ongoing'},
+    {c:'#27AE60',t:'Normal: Voting ongoing'},
+    {c:'#E67E22',t:'Incident: Intimidation'},
+    {c:'#27AE60',t:'Normal: Voting ongoing'},
+    {c:'#27AE60',t:'Normal: Voting ongoing'},
+    {c:'#27AE60',t:'Normal: Voting ongoing'},
+    {c:'#FFD700',t:'Caution: Equipment issue'},
+    {c:'#27AE60',t:'Normal'},
+    {c:'#27AE60',t:'Normal'},
+    {c:'#27AE60',t:'Normal'},
+    {c:'#27AE60',t:'Normal'},
+  ];
+  grid.innerHTML = levels.map((l,i) => `
+    <div class="map-cell" style="background:${l.c};">
+      <div class="map-cell-tooltip">${l.t}</div>
+    </div>`).join('');
+}
+
+function renderObservers(list) {
+  const tbody = document.getElementById('observers-body');
+  if (!tbody) return;
+  tbody.innerHTML = list.map(o => `
+    <tr>
+      <td><code style="font-size:11px;font-family:var(--font-mono);">${o.id}</code></td>
+      <td style="font-weight:500;">${o.name}</td>
+      <td>${o.state}</td>
+      <td>${o.lga}</td>
+      <td>${o.ward}</td>
+      <td style="font-size:11px;">${o.pu}</td>
+      <td style="text-align:center;">${o.reports}</td>
+      <td><span class="status-pill status-${o.status}">${o.status}</span></td>
+    </tr>`).join('');
+}
+
+function filterObservers(q) {
+  const lq = q.toLowerCase();
+  const filtered = OBSERVERS.filter(o =>
+    o.name.toLowerCase().includes(lq) || o.id.toLowerCase().includes(lq) ||
+    o.state.toLowerCase().includes(lq) || o.lga.toLowerCase().includes(lq)
+  );
+  renderObservers(filtered);
+}
+
+function populateSelect(sel, opts) {
+  sel.innerHTML = '<option value="">Select...</option>' + opts.map(o => `<option>${o}</option>`).join('');
+}
+
+function updateLGA() {
+  const state = document.getElementById('f-state').value;
+  const lgas = state ? Object.keys(GEO[state]||{}) : [];
+  populateSelect(document.getElementById('f-lga'), lgas);
+  populateSelect(document.getElementById('f-ward'), []);
+  populateSelect(document.getElementById('f-pu'), []);
+}
+function updateWard() {
+  const state = document.getElementById('f-state').value;
+  const lga = document.getElementById('f-lga').value;
+  const wards = (GEO[state]?.[lga])?.wards || [];
+  populateSelect(document.getElementById('f-ward'), wards);
+  populateSelect(document.getElementById('f-pu'), []);
+}
+function updatePU() {
+  const state = document.getElementById('f-state').value;
+  const lga = document.getElementById('f-lga').value;
+  const pus = (GEO[state]?.[lga])?.pus || [];
+  populateSelect(document.getElementById('f-pu'), pus);
+}
+
+function updateOnboardLGA() {
+  const state = document.getElementById('ob-state').value;
+  const lgas = state ? Object.keys(GEO[state]||{}) : [];
+  populateSelect(document.getElementById('ob-lga'), lgas);
+  populateSelect(document.getElementById('ob-ward'), []);
+  populateSelect(document.getElementById('ob-pu'), []);
+}
+function updateOnboardWard() {
+  const state = document.getElementById('ob-state').value;
+  const lga = document.getElementById('ob-lga').value;
+  const wards = (GEO[state]?.[lga])?.wards || [];
+  populateSelect(document.getElementById('ob-ward'), wards);
+  populateSelect(document.getElementById('ob-pu'), []);
+}
+function updateOnboardPU() {
+  const state = document.getElementById('ob-state').value;
+  const lga = document.getElementById('ob-lga').value;
+  const pus = (GEO[state]?.[lga])?.pus || [];
+  populateSelect(document.getElementById('ob-pu'), pus);
+}
+
+function submitReport() {
+  const obsName = document.getElementById('obs-name').value.trim() || 'Anonymous Observer';
+  const state = document.getElementById('f-state').value;
+  const lga = document.getElementById('f-lga').value;
+  const ward = document.getElementById('f-ward').value;
+  const pu = document.getElementById('f-pu').value;
+  const type = document.getElementById('f-type').value;
+  const details = document.getElementById('f-details').value.trim();
+  const turnout = document.getElementById('f-turnout').value;
+  const security = document.getElementById('f-security').value;
+  if (!state || !lga || !pu || !details) {
+    alert('Please fill in State, LGA, Polling Unit, and Observation Details.');
+    return;
+  }
+  const now = new Date();
+  const time = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+  REPORTS.unshift({ type, state, lga, ward: ward||'—', pu, observer: obsName, time, details, turnout, security });
+  document.getElementById('total-reports').textContent = REPORTS.length;
+  if (type === 'incident') {
+    const ic = document.getElementById('incidents-count');
+    if (ic) ic.textContent = parseInt(ic.textContent) + 1;
+  }
+  const conf = document.getElementById('submit-confirmation');
+  conf.style.display = 'block';
+  conf.textContent = `Report submitted at ${time} — Reference #RPT-${String(REPORTS.length).padStart(4,'0')}`;
+  document.getElementById('f-details').value = '';
+  renderFeed();
+  renderAllReports();
+}
+
+function onboardObserver() {
+  const fname = document.getElementById('ob-fname').value.trim();
+  const lname = document.getElementById('ob-lname').value.trim();
+  const state = document.getElementById('ob-state').value;
+  const lga = document.getElementById('ob-lga').value;
+  const ward = document.getElementById('ob-ward').value;
+  const pu = document.getElementById('ob-pu').value;
+  const role = document.getElementById('ob-role').value;
+  if (!fname || !lname || !state || !lga || !pu) {
+    alert('Please fill in all required fields.'); return;
+  }
+  const newId = 'OBS-' + String(OBSERVERS.length + 1).padStart(4,'0');
+  OBSERVERS.push({ id: newId, name: `${fname} ${lname}`, state, lga, ward: ward||'—', pu, reports: 0, status: 'pending' });
+  document.getElementById('active-obs').textContent = OBSERVERS.filter(o => o.status==='active').length;
+  const conf = document.getElementById('onboard-confirmation');
+  conf.style.display = 'block';
+  conf.textContent = `Observer registered: ${newId} — ${fname} ${lname} assigned to ${pu}`;
+  renderObservers(OBSERVERS);
+  ['ob-fname','ob-lname','ob-phone','ob-org'].forEach(id => { document.getElementById(id).value = ''; });
+}
+
+function showTab(name) {
+  document.querySelectorAll('.content').forEach(c => c.classList.remove('visible'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-'+name)?.classList.add('visible');
+  event.target.classList.add('active');
+  if (name === 'reports') renderAllReports();
+  if (name === 'observers') renderObservers(OBSERVERS);
+}
+
+function renderDonut() {
+  const el = document.getElementById('donutChart');
+  if (!el) return;
+  const counts = { Normal: 0, Incident: 0, Warning: 0, Info: 0 };
+  REPORTS.forEach(r => {
+    if (r.type === 'normal') counts.Normal++;
+    else if (r.type === 'incident') counts.Incident++;
+    else if (r.type === 'warning') counts.Warning++;
+    else if (r.type === 'info') counts.Info++;
+  });
+  const colors = { Normal:'#27AE60', Incident:'#C0392B', Warning:'#E67E22', Info:'#2471A3' };
+  if (window._donutChart) window._donutChart.destroy();
+  window._donutChart = new Chart(el, {
+    type: 'doughnut',
+    data: {
+      labels: Object.keys(counts),
+      datasets: [{ data: Object.values(counts), backgroundColor: Object.values(colors), borderWidth: 2 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: '65%',
+      plugins: { legend: { display: false } }
+    }
+  });
+  const leg = document.getElementById('donut-legend');
+  if (leg) leg.innerHTML = Object.entries(counts).map(([k,v]) =>
+    `<div class="legend-item"><span class="legend-swatch" style="background:${colors[k]}"></span>${k}: <strong>${v}</strong></div>`
+  ).join('');
+}
+
+function updateClock() {
+  const el = document.getElementById('clock');
+  if (el) {
+    const n = new Date();
+    el.textContent = n.toLocaleTimeString('en-NG', { hour:'2-digit', minute:'2-digit', second:'2-digit' }) + ' WAT';
+  }
+}
+
+setInterval(updateClock, 1000);
+updateClock();
+
+setTimeout(() => {
+  renderFeed();
+  renderStateProgress();
+  renderHeatmap();
+  renderObservers(OBSERVERS);
+  renderDonut();
+}, 100);
+
+setInterval(() => {
+  const el = document.getElementById('live-feed');
+  if (!el) return;
+  const states = ['Lagos','Kano','Abuja (FCT)','Rivers','Oyo'];
+  const types = ['normal','normal','normal','warning','info'];
+  const msgs = [
+    'Voting continues smoothly. No irregularities observed.',
+    'BVAS functioning properly. Accreditation on track.',
+    'Security forces visible and maintaining order.',
+    'Long queue forming. Voters patient and orderly.',
+    'Party agents present from all major parties.'
+  ];
+  const st = states[Math.floor(Math.random()*states.length)];
+  const tp = types[Math.floor(Math.random()*types.length)];
+  const auto = { type: tp, state: st, lga: 'Central', ward: 'Auto Ward', pu: 'Auto PU', observer: 'System Monitor', time: new Date().toLocaleTimeString('en-NG',{hour:'2-digit',minute:'2-digit'}), details: msgs[Math.floor(Math.random()*msgs.length)], turnout:'Moderate', security:'Peaceful' };
+  REPORTS.unshift(auto);
+  document.getElementById('total-reports').textContent = REPORTS.length;
+  renderFeed();
+}, 30000);
+</script>

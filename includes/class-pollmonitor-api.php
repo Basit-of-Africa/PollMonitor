@@ -89,6 +89,15 @@ class PollMonitor_API {
 			'callback'            => array( $this, 'create_incident' ),
 			'permission_callback' => array( $this, 'permissions_check_submit' ), 
 		) );
+
+        register_rest_route( $namespace, '/incidents/recent', array(
+            'methods'             => WP_REST_Server::READABLE,
+            'callback'            => array( $this, 'get_recent_incidents' ),
+            'permission_callback' => array( $this, 'permissions_check_read' ),
+            'args' => array(
+                'per_page' => array( 'required' => false, 'default' => 10 ),
+            ),
+        ) );
         
         register_rest_route( $namespace, '/results', array(
 			'methods'             => WP_REST_Server::CREATABLE,
@@ -114,6 +123,15 @@ class PollMonitor_API {
             'args' => array(
                 'taxonomy' => array( 'required' => true ), // state|lga|ward
                 'term_id'  => array( 'required' => true ),
+            ),
+        ) );
+
+        // Create observer (onboarding) - restricted to validators/admins
+        register_rest_route( $namespace, '/observers', array(
+            array(
+                'methods'             => WP_REST_Server::CREATABLE,
+                'callback'            => array( $this, 'create_observer' ),
+                'permission_callback' => array( $this, 'permissions_check_onboard' ),
             ),
         ) );
 	}
@@ -509,5 +527,153 @@ class PollMonitor_API {
         }
 
         return new WP_REST_Response( $data, 200 );
+    }
+
+    /**
+     * Return recent incident reports (for dashboard).
+     */
+    public function get_recent_incidents( WP_REST_Request $request ) {
+        $per_page = intval( $request->get_param( 'per_page' ) );
+        $per_page = $per_page > 0 ? min( $per_page, 100 ) : 10;
+
+        $context = self::get_station_access_context();
+
+        $args = array(
+            'post_type'      => 'incident_report',
+            'posts_per_page' => $per_page,
+            'post_status'    => array( 'publish', 'pending' ),
+            'orderby'        => 'date',
+            'order'          => 'DESC',
+        );
+
+        if ( ! empty( $context['requires_assignment'] ) ) {
+            // If user must be assigned, only return incidents for assigned stations
+            $assigned = $context['assigned_station_ids'];
+            if ( empty( $assigned ) ) {
+                return new WP_REST_Response( array(), 200 );
+            }
+
+            // Join via meta query
+            $args['meta_query'] = array(
+                array(
+                    'key'     => 'pollmonitor_station_id',
+                    'value'   => $assigned,
+                    'compare' => 'IN',
+                ),
+            );
+        }
+
+        $posts = get_posts( $args );
+        $data = array();
+        foreach ( $posts as $p ) {
+            $station_id = intval( get_post_meta( $p->ID, 'pollmonitor_station_id', true ) );
+            $data[] = array(
+                'id'        => $p->ID,
+                'title'     => get_the_title( $p ),
+                'content'   => wp_strip_all_tags( $p->post_content ),
+                'status'    => $p->post_status,
+                'date'      => get_the_date( 'c', $p ),
+                'author'    => get_the_author_meta( 'display_name', $p->post_author ),
+                'station_id'=> $station_id,
+            );
+        }
+
+        return new WP_REST_Response( $data, 200 );
+    }
+
+    /**
+     * Permission callback for onboarding observers.
+     */
+    public function permissions_check_onboard() {
+        // Only validators or admins can onboard observers
+        if ( current_user_can( 'pollmonitor_validate' ) || current_user_can( 'pollmonitor_manage_all' ) || current_user_can( 'manage_options' ) ) {
+            return true;
+        }
+
+        return new WP_Error( 'forbidden', 'You do not have permission to onboard observers', array( 'status' => 403 ) );
+    }
+
+    /**
+     * Create an observer user and trigger password reset email.
+     * Expects: first_name, last_name, email, username (optional), assigned_station_ids (array), observer_id (optional)
+     */
+    public function create_observer( WP_REST_Request $request ) {
+        $params = $request->get_json_params();
+
+        $email = isset( $params['email'] ) ? sanitize_email( $params['email'] ) : '';
+        $first = isset( $params['first_name'] ) ? sanitize_text_field( $params['first_name'] ) : '';
+        $last  = isset( $params['last_name'] ) ? sanitize_text_field( $params['last_name'] ) : '';
+        $username = isset( $params['username'] ) ? sanitize_user( $params['username'], true ) : '';
+        $assigned = isset( $params['assigned_station_ids'] ) && is_array( $params['assigned_station_ids'] ) ? array_map( 'intval', $params['assigned_station_ids'] ) : array();
+        $observer_id = isset( $params['observer_id'] ) ? sanitize_text_field( $params['observer_id'] ) : '';
+
+        if ( empty( $email ) || ! is_email( $email ) ) {
+            return new WP_Error( 'invalid_email', 'A valid email is required', array( 'status' => 400 ) );
+        }
+
+        if ( email_exists( $email ) ) {
+            return new WP_Error( 'email_exists', 'A user with that email already exists', array( 'status' => 409 ) );
+        }
+
+        if ( empty( $username ) ) {
+            $base = sanitize_user( current( explode( '@', $email ) ), true );
+            if ( empty( $base ) ) {
+                $base = 'observer';
+            }
+            // Ensure unique username
+            $candidate = $base; $suffix = 1;
+            while ( username_exists( $candidate ) ) { $candidate = $base . $suffix; $suffix++; }
+            $username = $candidate;
+        } else {
+            if ( username_exists( $username ) ) {
+                return new WP_Error( 'username_exists', 'Username already taken', array( 'status' => 409 ) );
+            }
+        }
+
+        // Generate a random password but we will force user to reset
+        $password = wp_generate_password( 16, false, false );
+
+        $display = trim( $first . ' ' . $last );
+        if ( empty( $display ) ) { $display = $username; }
+
+        $user_id = wp_insert_user( array(
+            'user_login'   => $username,
+            'user_pass'    => $password,
+            'user_email'   => $email,
+            'first_name'   => $first,
+            'last_name'    => $last,
+            'display_name' => $display,
+            'role'         => 'pollmonitor_observer',
+        ) );
+
+        if ( is_wp_error( $user_id ) ) {
+            return new WP_Error( 'create_failed', $user_id->get_error_message(), array( 'status' => 500 ) );
+        }
+
+        if ( ! empty( $observer_id ) ) {
+            update_user_meta( $user_id, 'pollmonitor_observer_id', sanitize_text_field( $observer_id ) );
+        }
+
+        if ( ! empty( $assigned ) ) {
+            update_user_meta( $user_id, 'pollmonitor_assigned_station_ids', $assigned );
+        }
+
+        if ( ! empty( $params['phone'] ) ) {
+            update_user_meta( $user_id, 'pollmonitor_phone', sanitize_text_field( $params['phone'] ) );
+        }
+
+        // Trigger password reset email so observer chooses their own password
+        if ( function_exists( 'retrieve_password' ) ) {
+            $user = get_user_by( 'id', $user_id );
+            if ( $user ) {
+                retrieve_password( $user->user_login );
+            }
+        }
+
+        if ( class_exists( 'PollMonitor_DB' ) ) {
+            PollMonitor_DB::log_action( 'observer_onboarded', get_current_user_id(), $user_id, array( 'email' => $email ) );
+        }
+
+        return new WP_REST_Response( array( 'id' => $user_id, 'username' => $username ), 201 );
     }
 }

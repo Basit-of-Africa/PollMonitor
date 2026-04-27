@@ -114,6 +114,11 @@ class PollMonitor_Observer_Importer {
             $user = get_user_by( 'id', $user_id );
             $status = 'created';
             $generated_password = $password;
+            // Trigger a password reset email so observers can set their own password securely
+            if ( function_exists( 'retrieve_password' ) ) {
+                // Send reset email to the new user's login
+                retrieve_password( $user->user_login );
+            }
         } else {
             $user_id = $user->ID;
 
